@@ -2,121 +2,155 @@
   box-sizing: border-box;
 }
 
+:root {
+  --bg: #050505;
+  --card: rgba(18, 18, 18, 0.92);
+  --card-border: rgba(200, 255, 90, 0.18);
+  --text: #f5f5f5;
+  --muted: #cfcfcf;
+  --accent: #c8ff5a;
+  --accent-soft: rgba(200, 255, 90, 0.12);
+}
+
 body {
   margin: 0;
-  background: #050505;
-  color: white;
+  background:
+    radial-gradient(circle at 75% 20%, rgba(200, 255, 90, 0.12), transparent 25%),
+    radial-gradient(circle at 80% 60%, rgba(255, 255, 255, 0.06), transparent 25%),
+    #050505;
+  color: var(--text);
   font-family: Arial, Helvetica, sans-serif;
   line-height: 1.6;
 }
 
 nav {
-  max-width: 1100px;
-  margin: auto;
-  padding: 1.2rem;
+  max-width: 1150px;
+  margin: 0 auto;
+  padding: 1.25rem 1.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
 nav h1 {
-  color: #c8ff5a;
+  color: var(--accent);
   margin: 0;
+  font-size: 1.7rem;
+  letter-spacing: 0.03em;
+}
+
+nav div {
+  display: flex;
+  gap: 1rem;
 }
 
 nav a {
-  color: white;
+  color: var(--muted);
   text-decoration: none;
-  margin-left: 1rem;
-  font-weight: bold;
+  font-weight: 700;
+  padding: 0.45rem 0.75rem;
+  border-radius: 999px;
+  transition: 0.2s ease;
 }
 
 nav a:hover {
-  color: #c8ff5a;
+  color: #050505;
+  background: var(--accent);
 }
 
 .hero {
-  min-height: 430px;
-  background:
-    radial-gradient(circle at 75% 45%, rgba(200, 255, 90, 0.18), transparent 20%),
-    radial-gradient(circle at 70% 60%, rgba(255, 255, 255, 0.08), transparent 25%),
-    #050505;
-  border-bottom: 1px solid #333;
+  min-height: 520px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .hero-content {
-  max-width: 1100px;
-  margin: auto;
-  padding: 5rem 1.2rem;
+  max-width: 1150px;
+  margin: 0 auto;
+  padding: 7rem 1.5rem 6rem;
 }
 
 .hero-content h2 {
-  font-size: clamp(2.2rem, 5vw, 4rem);
+  font-size: clamp(2.8rem, 6vw, 5.2rem);
   max-width: 900px;
-  color: #c8ff5a;
-  line-height: 1.1;
+  margin: 0 0 1.25rem;
+  line-height: 1.05;
+  color: var(--accent);
 }
 
 .hero-content p {
-  max-width: 780px;
-  font-size: 1.2rem;
-  color: #ddd;
+  max-width: 760px;
+  font-size: 1.25rem;
+  color: var(--muted);
+  margin: 0;
 }
 
 .page-header {
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 main {
-  max-width: 1100px;
-  margin: auto;
-  padding: 2rem 1.2rem;
+  max-width: 1150px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem 4rem;
 }
 
 .card {
-  background: #111;
-  border: 1px solid #2a2a2a;
-  border-radius: 14px;
-  padding: 1.5rem;
+  background: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.015));
+  border: 1px solid var(--card-border);
+  border-radius: 22px;
+  padding: 2rem;
   margin-bottom: 1.5rem;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.35);
 }
 
 .card h2 {
-  color: #c8ff5a;
+  color: var(--accent);
   margin-top: 0;
+  font-size: 1.65rem;
 }
 
 .card h3 {
-  color: #c8ff5a;
+  color: var(--accent);
+}
+
+.card p,
+.card li {
+  color: var(--muted);
+  font-size: 1rem;
 }
 
 ul {
-  padding-left: 1.3rem;
+  padding-left: 1.2rem;
+  margin-bottom: 0;
 }
 
 li {
-  margin-bottom: 0.6rem;
+  margin-bottom: 0.65rem;
 }
 
 .button {
   display: inline-block;
-  background: #c8ff5a;
+  background: var(--accent);
   color: #050505;
-  padding: 0.75rem 1rem;
+  padding: 0.8rem 1.15rem;
   border-radius: 999px;
-  font-weight: bold;
+  font-weight: 800;
   text-decoration: none;
+  transition: 0.2s ease;
 }
 
 .button:hover {
-  opacity: 0.9;
+  transform: translateY(-2px);
+  opacity: 0.92;
 }
 
 .presentation-frame {
+  width: 100%;
   border: none;
-  border-radius: 10px;
+  border-radius: 16px;
   background: white;
   margin-top: 1rem;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
 }
 
 .team-grid {
@@ -126,24 +160,31 @@ li {
 }
 
 .member-card {
-  background: #111;
-  border: 1px solid #2a2a2a;
-  border-radius: 14px;
-  padding: 1.2rem;
+  background: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.015));
+  border: 1px solid var(--card-border);
+  border-radius: 20px;
+  padding: 1.4rem;
   text-align: center;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.3);
 }
 
 .member-card img {
   width: 170px;
   height: 170px;
   object-fit: cover;
-  border-radius: 14px;
-  margin: 0 auto 1rem auto;
+  border-radius: 18px;
+  margin: 0 auto 1rem;
+  border: 1px solid rgba(255,255,255,0.12);
 }
 
 .member-card h3 {
-  color: #c8ff5a;
-  margin-bottom: 0.3rem;
+  color: var(--accent);
+  margin: 0 0 0.35rem;
+}
+
+.member-card p {
+  color: var(--muted);
+  margin: 0;
 }
 
 .tier-grid {
@@ -153,15 +194,35 @@ li {
 }
 
 .tier {
-  background: #080808;
-  border: 1px solid #2a2a2a;
-  border-radius: 12px;
-  padding: 1rem;
+  background: var(--accent-soft);
+  border: 1px solid var(--card-border);
+  border-radius: 18px;
+  padding: 1.25rem;
 }
 
 footer {
-  border-top: 1px solid #333;
+  border-top: 1px solid rgba(255,255,255,0.08);
   text-align: center;
   padding: 1.5rem;
   color: #aaa;
+}
+
+@media (max-width: 700px) {
+  nav {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  nav div {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .hero-content {
+    padding: 4rem 1.25rem;
+  }
+
+  .card {
+    padding: 1.4rem;
+  }
 }
