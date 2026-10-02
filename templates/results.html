@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Faíct - Results{% endblock %}
+
+{% block content %}
+
+<h2>Analysis Result</h2>
+
+<section>
+    <h3>Claim</h3>
+    <p>{{ claim }}</p>
+</section>
+
+<section>
+    <h3>Verdict</h3>
+    <p>{{ result.verdict }}</p>
+
+    <h3>Confidence</h3>
+    <p>{{ result.confidence }}%</p>
+
+    <h3>Summary</h3>
+    <p>{{ result.summary }}</p>
+
+    <h3>Explanation</h3>
+    <p>{{ result.explanation }}</p>
+</section>
+
+<section>
+
+    <h3>Supporting Evidence</h3>
+
+    {% for source in sources %}
+
+        <article>
+
+            <strong>{{ source.publisher }}</strong>
+
+            <h4>
+                <a href="{{ source.url }}" target="_blank">
+                    {{ source.title }}
+                </a>
+            </h4>
+
+            <p>{{ source.snippet }}</p>
+
+        </article>
+
+    {% endfor %}
+
+</section>
+
+<a href="/">Check another claim</a>
+
+<!--
+    TODO FRONTEND:
+    Match to the Faíct result mockup.
+
+    Do not delete these Jinja variables:
+    - claim
+    - result.verdict
+    - result.confidence
+    - result.summary
+    - result.explanation
+    - sources
+-->
+
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Faíct - Fact Check{% endblock %}
+
+{% block content %}
+
+<h2>Check a Claim</h2>
+
+<form method="POST" action="/analyze">
+
+    <textarea
+        name="claim"
+        placeholder="Enter a claim to verify..."
+        required>
+    </textarea>
+
+    <button type="submit">
+        Analyze Claim
+    </button>
+
+</form>
+
+<!--
+    TODO FRONTEND:
+    Replace with Colby's mockup.
+
+    Keep:
+    - form action="/analyze"
+    - method="POST"
+    - textarea name="claim"
+
+    Flask needs those values.
+-->
+
+{% endblock %}
