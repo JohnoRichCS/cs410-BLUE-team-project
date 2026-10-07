@@ -17,6 +17,8 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+    OPENAI_MODEL = os.getenv("OPENAI_MODEL")
+
     GOOGLE_FACT_CHECK_API_KEY = os.getenv(
         "GOOGLE_FACT_CHECK_API_KEY"
     )
