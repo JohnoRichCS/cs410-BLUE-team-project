@@ -3,81 +3,238 @@
 {% block title %}Faíct - Results{% endblock %}
 
 {% block content %}
+
+{% if result.verdict == "Unsupported" %}
+    {% set display_verdict = "Contradicted" %}
+{% else %}
+    {% set display_verdict = result.verdict %}
+{% endif %}
+
 <div class="mb-6">
-    <h2 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">Claim Analyzed</h2>
+    <h2 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">
+        Claim Analyzed
+    </h2>
+
     <div class="bg-slate-100 p-4 rounded-lg border border-slate-200 text-slate-700 italic">
         "{{ claim }}"
     </div>
 </div>
 
 <div class="space-y-6">
-    
+
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+
         <div class="bg-amber-50 border-b border-amber-100 p-6 flex items-start sm:items-center justify-between flex-col sm:flex-row">
+
             <div>
                 <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-amber-500 text-white mb-2 uppercase">
-                    VERDICT: {{ result.verdict }}
+                    VERDICT: {{ display_verdict }}
                 </span>
-                <h2 class="text-xl font-bold text-slate-800">{{ result.summary }}</h2>
+
+                <h2 class="text-xl font-bold text-slate-800">
+                    {{ result.summary }}
+                </h2>
             </div>
+
             <div class="mt-4 sm:mt-0 w-full sm:w-auto text-center bg-white p-3 rounded-lg shadow-sm border border-slate-100">
-                <div class="text-3xl font-extrabold text-blue-600">{{ result.confidence }}%</div>
-                <div class="text-xs font-bold text-slate-500 uppercase tracking-wide">Confidence Score</div>
+
+                <div class="text-3xl font-extrabold text-blue-600">
+                    {{ result.confidence }}%
+                </div>
+
+                <div class="text-xs font-bold text-slate-500 uppercase tracking-wide">
+                    Confidence Score
+                </div>
+
             </div>
+
         </div>
+
         <div class="p-6">
-            <h3 class="text-sm font-bold text-slate-500 uppercase mb-2">Analysis Explanation</h3>
+
+            <h3 class="text-sm font-bold text-slate-500 uppercase mb-2">
+                Analysis Explanation
+            </h3>
+
             <p class="text-slate-700 leading-relaxed mb-4">
                 {{ result.explanation }}
             </p>
-            
+
             <div class="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-slate-100 text-slate-700 border border-slate-200">
-                <svg class="w-4 h-4 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+
+                <svg
+                    class="w-4 h-4 mr-2 text-indigo-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                    ></path>
+                </svg>
+
                 AI Content Detection: Analysis Complete
+
             </div>
+
         </div>
+
     </div>
 
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-        <h3 class="text-lg font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">Supporting Evidence & Trusted Sources</h3>
+
+        <h3 class="text-lg font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">
+            Supporting Evidence & Trusted Sources
+        </h3>
+
+        {% if sources %}
+
         <ul class="space-y-4">
+
             {% for source in sources %}
+
             <li class="flex items-start">
-                <svg class="w-5 h-5 text-green-500 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+
+                <svg
+                    class="w-5 h-5 text-green-500 mt-0.5 mr-3 flex-shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    ></path>
+                </svg>
+
                 <div>
-                    <a href="{{ source.url }}" target="_blank" class="text-blue-600 font-semibold hover:underline">
+
+                    <a
+                        href="{{ source.url }}"
+                        target="_blank"
+                        class="text-blue-600 font-semibold hover:underline"
+                    >
                         {{ source.publisher }}: "{{ source.title }}"
                     </a>
-                    <p class="text-sm text-slate-500 mt-1">{{ source.snippet }}</p>
+
+                    <p class="text-sm text-slate-500 mt-1">
+                        {{ source.snippet }}
+                    </p>
+
                 </div>
+
             </li>
+
             {% endfor %}
+
         </ul>
+
+        {% else %}
+
+        <p class="text-sm text-slate-500">
+            No supporting fact-check evidence was found for this claim.
+        </p>
+
+        {% endif %}
+
     </div>
 
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col sm:flex-row justify-between items-center">
+
         <div class="mb-4 sm:mb-0 text-center sm:text-left">
-            <h3 class="text-md font-bold text-slate-800">Was this analysis accurate?</h3>
-            <p class="text-sm text-slate-500">Your feedback improves our AI models.</p>
+
+            <h3 class="text-md font-bold text-slate-800">
+                Was this analysis accurate?
+            </h3>
+
+            <p class="text-sm text-slate-500">
+                Your feedback improves our AI models.
+            </p>
+
         </div>
+
         <div class="flex space-x-3">
-            <button class="flex items-center px-4 py-2 border border-slate-300 rounded-lg text-slate-600 hover:bg-green-50 hover:text-green-600 hover:border-green-300 transition">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"></path></svg>
+
+            <button
+                class="flex items-center px-4 py-2 border border-slate-300 rounded-lg text-slate-600 hover:bg-green-50 hover:text-green-600 hover:border-green-300 transition"
+            >
+
+                <svg
+                    class="w-5 h-5 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"
+                    ></path>
+                </svg>
+
                 Yes
+
             </button>
-            <button class="flex items-center px-4 py-2 border border-slate-300 rounded-lg text-slate-600 hover:bg-red-50 hover:text-red-600 hover:border-red-300 transition">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5"></path></svg>
+
+            <button
+                class="flex items-center px-4 py-2 border border-slate-300 rounded-lg text-slate-600 hover:bg-red-50 hover:text-red-600 hover:border-red-300 transition"
+            >
+
+                <svg
+                    class="w-5 h-5 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5"
+                    ></path>
+                </svg>
+
                 No
+
             </button>
+
         </div>
+
     </div>
-    
+
     <div class="text-center pt-4">
-        <a href="/" class="text-blue-600 font-semibold hover:underline flex items-center justify-center">
-            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+
+        <a
+            href="/"
+            class="text-blue-600 font-semibold hover:underline flex items-center justify-center"
+        >
+
+            <svg
+                class="w-4 h-4 mr-1"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+            >
+                <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                ></path>
+            </svg>
+
             Check another claim
+
         </a>
+
     </div>
-    
+
 </div>
+
 {% endblock %}

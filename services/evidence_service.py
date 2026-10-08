@@ -1,49 +1,126 @@
+import os
+
+import requests
+from dotenv import load_dotenv
+
+
+load_dotenv()
+
+
+FACT_CHECK_API_URL = (
+    "https://factchecktools.googleapis.com/v1alpha1/claims:search"
+)
+
+
 def find_evidence(claim):
     """
-    Find evidence relevant to a submitted factual claim.
+    Search Google's Fact Check Tools API for fact-check reviews
+    related to the submitted claim.
 
-    CURRENT STATUS:
-    Placeholder implementation.
-
-    TODO:
-    - Connect to the Google Fact Check Tools API. (main)
-    - Research/add general web search if needed.
-    - Search using the submitted claim.
-    - Normalize API responses into the format below.
-    - Remove unusable or duplicate results.
-    - Handle API/network errors.
-
-    Parameters:
-        claim (str):
-            The factual claim that needs supporting or
-            contradicting evidence.
-
-    Returns:
-        list:
-            [
-                {
-                    "publisher": "Reuters",
-                    "title": "Article title",
-                    "url": "https://...",
-                    "snippet": "Relevant evidence..."
-                }
-            ]
-
-    IMPORTANT:
-    Keep this structure, because the AI service and frontend depend on it.
+    Returns a normalized list of evidence dictionaries.
     """
 
-    return [
-        {
-            "publisher": "Associated Press",
-            "title": "Example supporting source",
-            "url": "https://example.com/source1",
-            "snippet": "Placeholder evidence for the submitted claim."
-        },
-        {
-            "publisher": "Reuters",
-            "title": "Another supporting source",
-            "url": "https://example.com/source2",
-            "snippet": "Additional placeholder evidence."
-        }
-    ]
+    if not claim or not claim.strip():
+        return []
+
+    api_key = os.getenv("GOOGLE_FACT_CHECK_API_KEY")
+
+    if not api_key:
+        print("Google Fact Check API key is not configured.")
+        return []
+
+    params = {
+        "query": claim.strip(),
+        "languageCode": "en",
+        "pageSize": 5,
+        "key": api_key
+    }
+
+    try:
+        response = requests.get(
+            FACT_CHECK_API_URL,
+            params=params,
+            timeout=10
+        )
+
+        response.raise_for_status()
+
+        data = response.json()
+
+        return normalize_fact_checks(data)
+
+    except requests.RequestException as error:
+        print(f"Google Fact Check API error: {error}")
+        return []
+
+    except ValueError as error:
+        print(f"Google Fact Check parsing error: {error}")
+        return []
+
+
+def normalize_fact_checks(data):
+    """
+    Convert Google's Fact Check API response into the
+    evidence format expected by Faict.
+    """
+
+    evidence = []
+
+    claims = data.get("claims", [])
+
+    for claim in claims:
+        claim_text = claim.get(
+            "text",
+            "Unknown claim"
+        )
+
+        reviews = claim.get(
+            "claimReview",
+            []
+        )
+
+        for review in reviews:
+            publisher_data = review.get(
+                "publisher",
+                {}
+            )
+
+            publisher = publisher_data.get(
+                "name",
+                "Unknown Publisher"
+            )
+
+            title = review.get(
+                "title",
+                "Fact-check review"
+            )
+
+            url = review.get(
+                "url",
+                ""
+            )
+
+            rating = review.get(
+                "textualRating",
+                "No rating provided"
+            )
+
+            review_date = review.get(
+                "reviewDate",
+                "Unknown date"
+            )
+
+            snippet = (
+                f'Fact-checked claim: "{claim_text}". '
+                f"Rating: {rating}. "
+                f"Review date: {review_date}."
+            )
+
+            evidence.append({
+                "publisher": publisher,
+                "title": title,
+                "url": url,
+                "snippet": snippet
+            })
+
+    return evidence
