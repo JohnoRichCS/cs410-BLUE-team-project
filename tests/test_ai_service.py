@@ -1,4 +1,4 @@
-from services.ai_service import validate_result
+from services.ai_service import analyze_claim, validate_result
 
 
 def test_valid_result_is_preserved():
@@ -44,3 +44,22 @@ def test_negative_confidence_is_limited():
     })
 
     assert result["confidence"] == 0
+
+
+def test_uncertain_confidence_is_limited():
+    result = validate_result({
+        "verdict": "Uncertain",
+        "confidence": 99,
+        "summary": "Insufficient evidence.",
+        "explanation": "The evidence does not address the claim."
+    })
+
+    assert result["confidence"] == 69
+
+
+def test_empty_claim_does_not_call_api():
+    result = analyze_claim("", [])
+
+    assert result["verdict"] == "Uncertain"
+    assert result["confidence"] == 0
+    assert result["summary"] == "No claim was provided."

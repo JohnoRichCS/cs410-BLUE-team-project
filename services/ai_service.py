@@ -12,14 +12,31 @@ def analyze_claim(claim, evidence):
     """
     Analyze a factual claim using retrieved evidence.
 
+    Parameters:
+        claim (str):
+            User-submitted factual claim.
+
+        evidence (list):
+            Evidence dictionaries returned by find_evidence().
+
     Returns:
-        {
-            "verdict": str,
-            "confidence": int,
-            "summary": str,
-            "explanation": str
-        }
+        dict:
+            {
+                "verdict": str,
+                "confidence": int,
+                "summary": str,
+                "explanation": str
+            }
     """
+
+    # Reject empty claims before calling the API.
+    if not claim or not claim.strip():
+        return {
+            "verdict": "Uncertain",
+            "confidence": 0,
+            "summary": "No claim was provided.",
+            "explanation": "Faict cannot analyze an empty claim."
+        }
 
     api_key = os.getenv("OPENAI_API_KEY")
     model = os.getenv("OPENAI_MODEL", "gpt-6-luna")
@@ -29,7 +46,7 @@ def analyze_claim(claim, evidence):
             "verdict": "Uncertain",
             "confidence": 0,
             "summary": "AI analysis is unavailable.",
-            "explanation": "The OpenAI API key is not configured."
+            "explanation": "The OpenAI API key has not been configured."
         }
 
     client = OpenAI(api_key=api_key)
@@ -40,9 +57,9 @@ def analyze_claim(claim, evidence):
 You are the AI analysis component of Faict, an evidence-based
 fact-checking application.
 
-Analyze the submitted claim using only the supplied evidence.
+Analyze the submitted claim using ONLY the supplied evidence.
 
-Do not invent sources, facts, publishers, URLs, or evidence.
+Do not invent facts, evidence, publishers, sources, citations, or URLs.
 
 Choose exactly one verdict:
 
@@ -54,15 +71,24 @@ The claim contains some truth but omits important context,
 exaggerates, or may lead the reader to an incorrect conclusion.
 
 Unsupported:
-The supplied evidence contradicts the claim.
+The supplied evidence directly contradicts the claim.
 
 Uncertain:
-The supplied evidence is insufficient, unclear, or conflicting.
+The supplied evidence is insufficient, unclear, conflicting,
+irrelevant, or does not actually address the claim.
 
-Confidence must be an integer from 0 to 100 and should represent
-how confident the analysis is based on the supplied evidence.
+Confidence must be an integer from 0 to 100.
 
-Return only valid JSON in this exact structure:
+Confidence represents confidence in the verdict based on the supplied
+evidence. It does NOT represent how likely the claim itself is to be true.
+
+For an Uncertain verdict, confidence should generally remain below 70
+because the available evidence is insufficient, unclear, or conflicting.
+
+If the evidence is placeholder text, irrelevant, or does not actually
+address the claim, return Uncertain.
+
+Return ONLY valid JSON in exactly this structure:
 
 {
     "verdict": "Supported",
@@ -107,11 +133,17 @@ EVIDENCE:
             "verdict": "Uncertain",
             "confidence": 0,
             "summary": "AI analysis could not be completed.",
-            "explanation": "An error occurred while communicating with OpenAI."
+            "explanation": (
+                "An error occurred while communicating with the OpenAI API."
+            )
         }
 
 
 def format_evidence(evidence):
+    """
+    Convert retrieved evidence into readable text for the AI model.
+    """
+
     if not evidence:
         return "No evidence was provided."
 
@@ -132,6 +164,10 @@ Evidence: {source.get("snippet", "No snippet available")}
 
 
 def validate_result(result):
+    """
+    Validate and normalize the structured AI response.
+    """
+
     valid_verdicts = {
         "Supported",
         "Misleading",
@@ -149,15 +185,26 @@ def validate_result(result):
     except (TypeError, ValueError):
         confidence = 0
 
+    # Keep confidence inside the valid range.
     confidence = max(0, min(100, confidence))
+
+    # Avoid confusing results such as "Uncertain - 99%".
+    if verdict == "Uncertain":
+        confidence = min(confidence, 69)
 
     return {
         "verdict": verdict,
         "confidence": confidence,
         "summary": str(
-            result.get("summary", "No summary provided.")
+            result.get(
+                "summary",
+                "No summary was provided."
+            )
         ),
         "explanation": str(
-            result.get("explanation", "No explanation provided.")
+            result.get(
+                "explanation",
+                "No explanation was provided."
+            )
         )
     }
