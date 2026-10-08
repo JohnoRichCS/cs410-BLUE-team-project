@@ -63,3 +63,21 @@ def test_empty_claim_does_not_call_api():
     assert result["verdict"] == "Uncertain"
     assert result["confidence"] == 0
     assert result["summary"] == "No claim was provided."
+
+
+def test_no_evidence_returns_uncertain():
+    result = analyze_claim(
+        "Did I eat bacon today?",
+        []
+    )
+
+    assert result["verdict"] == "Uncertain"
+    assert result["confidence"] == 0
+    assert result["summary"] == "No evidence was found for this claim."
+    assert (
+        result["explanation"]
+        == (
+            "Faict could not find fact-check evidence related to the "
+            "submitted claim, so the claim cannot be verified."
+        )
+    )

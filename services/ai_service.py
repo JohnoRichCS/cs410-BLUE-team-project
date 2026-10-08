@@ -29,13 +29,26 @@ def analyze_claim(claim, evidence):
             }
     """
 
-    # Reject empty claims before calling the API.
+    # Reject empty claims
     if not claim or not claim.strip():
         return {
             "verdict": "Uncertain",
             "confidence": 0,
             "summary": "No claim was provided.",
             "explanation": "Faict cannot analyze an empty claim."
+        }
+
+    # If no evidence was found, do not call OpenAI.
+    # Saves API usage and avoids giving confidence to a claim that has no supporting material.
+    if not evidence:
+        return {
+            "verdict": "Uncertain",
+            "confidence": 0,
+            "summary": "No evidence was found for this claim.",
+            "explanation": (
+                "Faict could not find fact-check evidence related to the "
+                "submitted claim, so the claim cannot be verified."
+            )
         }
 
     api_key = os.getenv("OPENAI_API_KEY")
@@ -85,8 +98,8 @@ evidence. It does NOT represent how likely the claim itself is to be true.
 For an Uncertain verdict, confidence should generally remain below 70
 because the available evidence is insufficient, unclear, or conflicting.
 
-If the evidence is placeholder text, irrelevant, or does not actually
-address the claim, return Uncertain.
+If the evidence is irrelevant or does not actually address the claim,
+return Uncertain.
 
 Return ONLY valid JSON in exactly this structure:
 
@@ -185,10 +198,9 @@ def validate_result(result):
     except (TypeError, ValueError):
         confidence = 0
 
-    # Keep confidence inside the valid range.
     confidence = max(0, min(100, confidence))
 
-    # Avoid confusing results such as "Uncertain - 99%".
+    # Prevent confusing results such as "Uncertain - 99%".
     if verdict == "Uncertain":
         confidence = min(confidence, 69)
 
