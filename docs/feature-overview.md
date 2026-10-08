@@ -39,7 +39,7 @@ PyTest is used to validate application functionality. The skeleton includes an e
 - Integrate the Google Fact Check API.
 - Implement real AI-powered claim analysis.
 - Continue refining the frontend interface.
-- Expand automated testing.
+- Expand automated testing
 - Verify that all components work together correctly.
 - Develop additional prototype features identified in the team's earlier project presentation.
 
