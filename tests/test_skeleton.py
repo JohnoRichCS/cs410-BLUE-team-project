@@ -1,25 +1,51 @@
 from models.submission import Submission
 
 
-def test_faict_skeleton_workflow(app, client):
+def test_faict_skeleton_workflow(app, client, monkeypatch):
     """
-    Tests the current Faíct skeleton from submission through storage.
+    Tests the Faict application flow without making real API calls.
 
-    This verifies that:
+    Verifies that:
     1. The homepage loads.
     2. A claim can be submitted.
-    3. Placeholder analysis is displayed.
-    4. Placeholder evidence is displayed.
+    3. Analysis results reach the results page.
+    4. Evidence reaches the results page.
     5. The submission is saved to the database.
     """
 
-    # Homepage works
+    fake_sources = [
+        {
+            "publisher": "Test Source",
+            "title": "Test Evidence",
+            "url": "https://example.com",
+            "snippet": "Test evidence for the submitted claim."
+        }
+    ]
+
+    fake_result = {
+        "verdict": "Uncertain",
+        "confidence": 75,
+        "summary": "Test analysis result.",
+        "explanation": "This is a test explanation."
+    }
+
+    # Replace external services during this test
+    monkeypatch.setattr(
+        "routes.main.find_evidence",
+        lambda claim: fake_sources
+    )
+
+    monkeypatch.setattr(
+        "routes.main.analyze_claim",
+        lambda claim, evidence: fake_result
+    )
+
+    # 1. Homepage loads
     response = client.get("/")
 
     assert response.status_code == 200
 
-
-    # Claim submission
+    # 2. Submit a claim
     test_claim = "The Earth has two moons."
 
     response = client.post(
@@ -29,20 +55,17 @@ def test_faict_skeleton_workflow(app, client):
 
     assert response.status_code == 200
 
-
-    # Placeholder analysis reached the result page
+    # 3. Analysis reached the results page
     assert b"Uncertain" in response.data
     assert b"75%" in response.data
+    assert b"Test analysis result." in response.data
 
+    # 4. Evidence reached the results page
+    assert b"Test Source" in response.data
+    assert b"Test Evidence" in response.data
 
-    # Placeholder evidence reached the result page
-    assert b"Associated Press" in response.data
-    assert b"Reuters" in response.data
-
-
-    # Submission was saved
+    # 5. Submission was saved
     with app.app_context():
-
         submission = Submission.query.first()
 
         assert submission is not None
