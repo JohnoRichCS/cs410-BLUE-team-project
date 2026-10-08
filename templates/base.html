@@ -12,47 +12,129 @@
     <script src="https://cdn.tailwindcss.com"></script>
 
     {% block head %}{% endblock %}
-
 </head>
+
 <body class="bg-slate-50 text-slate-800 font-sans antialiased">
-    </header>
+
+    <header>
         <nav class="bg-blue-600 text-white shadow-md relative z-20">
             <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
-                
-                <a href="/" class="flex items-center space-x-2 hover:opacity-90 transition cursor-pointer">
-                <img src="{{ url_for('static', filename='images/Faict-logo-simple.png') }}" alt="Faict Logo" class="w-10 h-10">
-                <span class="text-2xl font-bold tracking-wider">Faíct</span>
+
+                <a
+                    href="/"
+                    class="flex items-center space-x-2 hover:opacity-90 transition cursor-pointer"
+                >
+                    <img
+                        src="{{ url_for('static', filename='images/Faict-logo-simple.png') }}"
+                        alt="Faict Logo"
+                        class="w-10 h-10"
+                    >
+
+                    <span class="text-2xl font-bold tracking-wider">
+                        Faíct
+                    </span>
                 </a>
-                
+
                 <div class="hidden md:flex space-x-6">
-                    <a href="#" class="hover:text-blue-200 font-medium transition">Dashboard</a>
-                    <a href="#" class="hover:text-blue-200 font-medium transition">History</a>
-                    <a href="#" class="hover:text-blue-200 font-medium transition">API Documentation</a>
-                    <a href="#" class="hover:text-blue-200 font-medium transition">Account</a>
+
+                    <a
+                        href="/"
+                        class="hover:text-blue-200 font-medium transition"
+                    >
+                        Dashboard
+                    </a>
+
+                    <a
+                        href="/history"
+                        class="hover:text-blue-200 font-medium transition"
+                    >
+                        History
+                    </a>
+
+                    <a
+                        href="#"
+                        class="hover:text-blue-200 font-medium transition"
+                    >
+                        API Documentation
+                    </a>
+
+                    <a
+                        href="#"
+                        class="hover:text-blue-200 font-medium transition"
+                    >
+                        Account
+                    </a>
+
                 </div>
 
                 <div class="md:hidden flex items-center">
-                    <button onclick="document.getElementById('mobile-menu').classList.toggle('hidden')" class="text-white hover:text-blue-200 focus:outline-none transition">
-                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+
+                    <button
+                        onclick="document.getElementById('mobile-menu').classList.toggle('hidden')"
+                        class="text-white hover:text-blue-200 focus:outline-none transition"
+                    >
+                        <svg
+                            class="w-7 h-7"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M4 6h16M4 12h16M4 18h16"
+                            ></path>
                         </svg>
                     </button>
+
                 </div>
             </div>
 
-            <div id="mobile-menu" class="hidden md:hidden bg-blue-700 pb-4 pt-2 px-4 shadow-inner absolute w-full left-0 border-t border-blue-500">
-                <a href="#" class="block py-3 text-white hover:text-blue-200 font-medium border-b border-blue-600">Dashboard</a>
-                <a href="#" class="block py-3 text-white hover:text-blue-200 font-medium border-b border-blue-600">History</a>
-                <a href="#" class="block py-3 text-white hover:text-blue-200 font-medium border-b border-blue-600">API Documentation</a>
-                <a href="#" class="block py-3 text-white hover:text-blue-200 font-medium">Account</a>
+            <div
+                id="mobile-menu"
+                class="hidden md:hidden bg-blue-700 pb-4 pt-2 px-4 shadow-inner absolute w-full left-0 border-t border-blue-500"
+            >
+
+                <a
+                    href="/"
+                    class="block py-3 text-white hover:text-blue-200 font-medium border-b border-blue-600"
+                >
+                    Dashboard
+                </a>
+
+                <a
+                    href="/history"
+                    class="block py-3 text-white hover:text-blue-200 font-medium border-b border-blue-600"
+                >
+                    History
+                </a>
+
+                <a
+                    href="#"
+                    class="block py-3 text-white hover:text-blue-200 font-medium border-b border-blue-600"
+                >
+                    API Documentation
+                </a>
+
+                <a
+                    href="#"
+                    class="block py-3 text-white hover:text-blue-200 font-medium"
+                >
+                    Account
+                </a>
+
             </div>
         </nav>
-    </header> 
+    </header>
 
     <main class="max-w-4xl mx-auto px-4 py-8">
         {% block content %}{% endblock %}
     </main>
 
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
 </body>
+
 </html>

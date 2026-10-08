@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Faíct - History{% endblock %}
+
+{% block content %}
+
+<div class="mb-6">
+    <h1 class="text-2xl font-bold text-slate-800">
+        Analysis History
+    </h1>
+
+    <p class="text-slate-500 mt-1">
+        Previously analyzed claims saved by Faíct.
+    </p>
+</div>
+
+{% if submissions %}
+
+<div class="space-y-4">
+
+    {% for submission in submissions %}
+
+    <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
+
+        <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+
+            <div class="flex-1">
+
+                <p class="text-sm font-bold text-slate-500 uppercase tracking-wide mb-1">
+                    Claim
+                </p>
+
+                <p class="text-lg font-semibold text-slate-800">
+                    {{ submission.claim }}
+                </p>
+
+            </div>
+
+            <div class="text-left sm:text-right">
+
+                {% if submission.verdict == "Unsupported" %}
+                    {% set display_verdict = "Contradicted" %}
+                {% else %}
+                    {% set display_verdict = submission.verdict %}
+                {% endif %}
+
+                <div class="inline-flex items-center px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-sm font-bold uppercase">
+                    {{ display_verdict }}
+                </div>
+
+                <p class="text-sm text-slate-500 mt-2">
+                    {{ submission.confidence }}% confidence
+                </p>
+
+            </div>
+
+        </div>
+
+        <div class="mt-4 pt-4 border-t border-slate-100">
+
+            <p class="text-sm font-bold text-slate-500 uppercase tracking-wide mb-1">
+                Summary
+            </p>
+
+            <p class="text-slate-700">
+                {{ submission.summary }}
+            </p>
+
+        </div>
+
+        {% if submission.created_at %}
+
+        <div class="mt-4 text-xs text-slate-400">
+            Analyzed:
+            {{ submission.created_at.strftime("%B %d, %Y at %I:%M %p") }}
+        </div>
+
+        {% endif %}
+
+    </div>
+
+    {% endfor %}
+
+</div>
+
+{% else %}
+
+<div class="bg-white border border-slate-200 rounded-xl shadow-sm p-8 text-center">
+
+    <h2 class="text-lg font-bold text-slate-800 mb-2">
+        No analysis history yet
+    </h2>
+
+    <p class="text-slate-500 mb-4">
+        Analyze a claim and it will appear here.
+    </p>
+
+    <a
+        href="/"
+        class="text-blue-600 font-semibold hover:underline"
+    >
+        Analyze a claim
+    </a>
+
+</div>
+
+{% endif %}
+
+{% endblock %}

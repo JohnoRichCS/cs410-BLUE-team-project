@@ -44,6 +44,20 @@ def analyze():
     )
 
 
+@main.route("/history")
+def history():
+    saved_submissions = (
+        Submission.query
+        .order_by(Submission.created_at.desc())
+        .all()
+    )
+
+    return render_template(
+        "history.html",
+        submissions=saved_submissions
+    )
+
+
 @main.route("/submissions")
 def submissions():
     saved_submissions = Submission.query.all()
@@ -54,7 +68,9 @@ def submissions():
                 "id": item.id,
                 "claim": item.claim,
                 "verdict": item.verdict,
-                "confidence": item.confidence
+                "confidence": item.confidence,
+                "summary": item.summary,
+                "explanation": item.explanation
             }
             for item in saved_submissions
         ]
