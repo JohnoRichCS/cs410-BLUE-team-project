@@ -14,9 +14,21 @@ def home():
     return render_template("index.html")
 
 
+CLAIM_MIN_LENGTH = 10
+CLAIM_MAX_LENGTH = 500
+
+
 @main.route("/analyze", methods=["POST"])
 def analyze():
-    claim = request.form["claim"]
+    claim = request.form["claim"].strip()
+
+    # 3.1.2 / 3.1.3: reject an empty or out-of-range claim before starting
+    # the verification workflow.
+    if not (CLAIM_MIN_LENGTH <= len(claim) <= CLAIM_MAX_LENGTH):
+        return render_template(
+            "index.html",
+            error="Enter a claim between 10 and 500 characters."
+        )
 
     sources = find_evidence(claim)
 

@@ -32,7 +32,7 @@ def analyze_claim(claim, evidence):
     # Reject empty claims
     if not claim or not claim.strip():
         return {
-            "verdict": "Uncertain",
+            "verdict": "Unable to verify",
             "confidence": 0,
             "summary": "No claim was provided.",
             "explanation": "Faict cannot analyze an empty claim."
@@ -40,15 +40,18 @@ def analyze_claim(claim, evidence):
 
     # If no evidence was found, do not call OpenAI.
     # Saves API usage and avoids giving confidence to a claim that has no supporting material.
+    #
+    # 3.7.2 / 3.7.4: this is the "insufficient relevant evidence" path, so
+    # the verdict and explanation use the SRS's exact required wording.
+    # (The doc's trigger is "no evidence item meets the 0.20 relevance
+    # threshold" from issue #13's scoring, which does not exist yet; an
+    # empty evidence list is the closest equivalent currently computable.)
     if not evidence:
         return {
-            "verdict": "Uncertain",
+            "verdict": "Unable to verify",
             "confidence": 0,
             "summary": "No evidence was found for this claim.",
-            "explanation": (
-                "Faict could not find fact-check evidence related to the "
-                "submitted claim, so the claim cannot be verified."
-            )
+            "explanation": "Not enough relevant evidence was found."
         }
 
     api_key = os.getenv("OPENAI_API_KEY")
@@ -56,7 +59,7 @@ def analyze_claim(claim, evidence):
 
     if not api_key:
         return {
-            "verdict": "Uncertain",
+            "verdict": "Unable to verify",
             "confidence": 0,
             "summary": "AI analysis is unavailable.",
             "explanation": "The OpenAI API key has not been configured."
@@ -129,11 +132,14 @@ EVIDENCE:
         raw_output = response.output_text.strip()
         result = json.loads(raw_output)
 
-        return validate_result(result)
+        validated = validate_result(result)
+        validated["verdict"] = normalize_verdict(validated["verdict"])
+
+        return validated
 
     except json.JSONDecodeError:
         return {
-            "verdict": "Uncertain",
+            "verdict": "Unable to verify",
             "confidence": 0,
             "summary": "The AI returned an invalid response.",
             "explanation": "Faict could not interpret the AI analysis."
@@ -143,7 +149,7 @@ EVIDENCE:
         print(f"OpenAI API error: {error}")
 
         return {
-            "verdict": "Uncertain",
+            "verdict": "Unable to verify",
             "confidence": 0,
             "summary": "AI analysis could not be completed.",
             "explanation": (
@@ -220,3 +226,25 @@ def validate_result(result):
             )
         )
     }
+
+
+def normalize_verdict(verdict):
+    """
+    FR-06 / doc 3.7.1: map the AI's internal verdict vocabulary
+    (Supported, Misleading, Unsupported, Uncertain) onto the three
+    verdicts the SRS requires every completed verification to return:
+    Supported, Contradicted, or Unable to verify.
+
+    Misleading and Unsupported both indicate the claim should not be
+    trusted as stated, so both map to Contradicted; Uncertain maps to
+    Unable to verify.
+    """
+
+    mapping = {
+        "Supported": "Supported",
+        "Misleading": "Contradicted",
+        "Unsupported": "Contradicted",
+        "Uncertain": "Unable to verify"
+    }
+
+    return mapping.get(verdict, "Unable to verify")

@@ -23,7 +23,7 @@ def test_faict_skeleton_workflow(app, client, monkeypatch):
     ]
 
     fake_result = {
-        "verdict": "Uncertain",
+        "verdict": "Unable to verify",
         "confidence": 75,
         "summary": "Test analysis result.",
         "explanation": "This is a test explanation."
@@ -56,7 +56,7 @@ def test_faict_skeleton_workflow(app, client, monkeypatch):
     assert response.status_code == 200
 
     # 3. Analysis reached the results page
-    assert b"Uncertain" in response.data
+    assert b"Unable to verify" in response.data
     assert b"75%" in response.data
     assert b"Test analysis result." in response.data
 
@@ -70,5 +70,5 @@ def test_faict_skeleton_workflow(app, client, monkeypatch):
 
         assert submission is not None
         assert submission.claim == test_claim
-        assert submission.verdict == "Uncertain"
+        assert submission.verdict == "Unable to verify"
         assert submission.confidence == 75

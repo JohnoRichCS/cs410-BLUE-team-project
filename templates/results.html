@@ -4,12 +4,6 @@
 
 {% block content %}
 
-{% if result.verdict == "Unsupported" %}
-    {% set display_verdict = "Contradicted" %}
-{% else %}
-    {% set display_verdict = result.verdict %}
-{% endif %}
-
 <div class="mb-6">
     <h2 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">
         Claim Analyzed
@@ -28,7 +22,7 @@
 
             <div>
                 <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-amber-500 text-white mb-2 uppercase">
-                    VERDICT: {{ display_verdict }}
+                    VERDICT: {{ result.verdict }}
                 </span>
 
                 <h2 class="text-xl font-bold text-slate-800">
