@@ -1,10 +1,32 @@
+import requests
+
 from services.evidence_service import (
+    find_evidence,
+    find_fact_check_evidence,
+    find_web_evidence,
     get_domain,
     is_trusted_domain,
     normalize_brave_results,
     normalize_fact_checks,
     remove_duplicate_evidence,
 )
+
+
+class FakeResponse:
+    """Minimal stand-in for requests.Response used by the tests below."""
+
+    def __init__(self, json_data):
+        self._json_data = json_data
+
+    def raise_for_status(self):
+        pass
+
+    def json(self):
+        return self._json_data
+
+
+def raise_request_exception(*args, **kwargs):
+    raise requests.RequestException("simulated network failure")
 
 
 def test_normalize_fact_checks():
@@ -163,3 +185,95 @@ def test_duplicate_sources_are_removed():
     )
 
     assert len(result) == 1
+
+
+# 4.4 / 3.4.4: distinguishing a genuine source failure from a source
+# that was simply never configured or that legitimately found nothing.
+
+
+def test_fact_check_returns_not_failed_when_key_missing(monkeypatch):
+    monkeypatch.delenv("GOOGLE_FACT_CHECK_API_KEY", raising=False)
+
+    evidence, failed = find_fact_check_evidence("Any claim")
+
+    assert evidence == []
+    assert failed is False
+
+
+def test_fact_check_returns_failed_on_request_exception(monkeypatch):
+    monkeypatch.setenv("GOOGLE_FACT_CHECK_API_KEY", "fake-key")
+    monkeypatch.setattr(
+        "services.evidence_service.requests.get",
+        raise_request_exception
+    )
+
+    evidence, failed = find_fact_check_evidence("Any claim")
+
+    assert evidence == []
+    assert failed is True
+
+
+def test_fact_check_returns_not_failed_on_success_with_no_results(monkeypatch):
+    monkeypatch.setenv("GOOGLE_FACT_CHECK_API_KEY", "fake-key")
+    monkeypatch.setattr(
+        "services.evidence_service.requests.get",
+        lambda *a, **k: FakeResponse({"claims": []})
+    )
+
+    evidence, failed = find_fact_check_evidence("Any claim")
+
+    assert evidence == []
+    assert failed is False
+
+
+def test_web_evidence_returns_failed_on_request_exception(monkeypatch):
+    monkeypatch.setenv("BRAVE_SEARCH_API_KEY", "fake-key")
+    monkeypatch.setattr(
+        "services.evidence_service.requests.get",
+        raise_request_exception
+    )
+
+    evidence, failed = find_web_evidence("Any claim")
+
+    assert evidence == []
+    assert failed is True
+
+
+def test_find_evidence_returns_none_when_both_sources_fail(monkeypatch):
+    monkeypatch.setenv("GOOGLE_FACT_CHECK_API_KEY", "fake-key")
+    monkeypatch.setenv("BRAVE_SEARCH_API_KEY", "fake-key")
+    monkeypatch.setattr(
+        "services.evidence_service.requests.get",
+        raise_request_exception
+    )
+
+    assert find_evidence("Any claim with enough length") is None
+
+
+def test_find_evidence_returns_empty_list_when_one_source_fails(monkeypatch):
+    """One source fails, the other succeeds but finds nothing: this is
+    NOT total failure, so an empty list (not None) is returned."""
+
+    monkeypatch.setenv("GOOGLE_FACT_CHECK_API_KEY", "fake-key")
+    monkeypatch.setenv("BRAVE_SEARCH_API_KEY", "fake-key")
+
+    def fake_get(url, *args, **kwargs):
+        if url == "https://factchecktools.googleapis.com/v1alpha1/claims:search":
+            raise requests.RequestException("simulated network failure")
+        return FakeResponse({"web": {"results": []}})
+
+    monkeypatch.setattr(
+        "services.evidence_service.requests.get",
+        fake_get
+    )
+
+    assert find_evidence("Any claim with enough length") == []
+
+
+def test_find_evidence_returns_empty_list_when_no_keys_configured(monkeypatch):
+    """Sources that are simply unconfigured are not a failure."""
+
+    monkeypatch.delenv("GOOGLE_FACT_CHECK_API_KEY", raising=False)
+    monkeypatch.delenv("BRAVE_SEARCH_API_KEY", raising=False)
+
+    assert find_evidence("Any claim with enough length") == []

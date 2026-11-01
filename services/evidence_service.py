@@ -287,9 +287,17 @@ def find_evidence(claim):
     Brave Search is used when no Google fact-check evidence is found.
 
     Returns:
-        list[dict]
+        list[dict] | None
 
-        Example:
+        A list (possibly empty) on success - including when a source
+        is simply not configured, which is not a failure.
+
+        None specifically when every attempted source raised a
+        request/parsing error (3.4.4, 4.4): callers should treat this
+        as "evidence sources are temporarily unavailable" rather than
+        "no evidence exists for this claim."
+
+        Example of a non-empty list:
 
         [
             {
@@ -308,7 +316,7 @@ def find_evidence(claim):
 
     # First choice: Google Fact Check
 
-    fact_check_results = find_fact_check_evidence(claim)
+    fact_check_results, fact_check_failed = find_fact_check_evidence(claim)
 
     if fact_check_results:
         return remove_duplicate_evidence(
@@ -317,19 +325,31 @@ def find_evidence(claim):
 
     # Fallback: Brave Search
 
-    web_results = find_web_evidence(claim)
+    web_results, web_failed = find_web_evidence(claim)
 
-    return remove_duplicate_evidence(
-        web_results
-    )
+    if web_results:
+        return remove_duplicate_evidence(
+            web_results
+        )
+
+    # 3.4.4 / 4.4: continue with whatever source was available; only
+    # report "unavailable" when every attempted source actually failed
+    # (not merely unconfigured or genuinely empty).
+    if fact_check_failed and web_failed:
+        return None
+
+    return []
 
 
 def find_fact_check_evidence(claim):
     """
     Search Google's Fact Check Tools API.
 
-    Returns normalized evidence that can be passed directly
-    into analyze_claim().
+    Returns:
+        tuple[list[dict], bool]
+            Normalized evidence (passable directly into analyze_claim())
+            and whether this source failed (raised a request/parsing
+            error) rather than simply finding nothing.
     """
 
     api_key = os.getenv(
@@ -340,7 +360,7 @@ def find_fact_check_evidence(claim):
         print(
             "Google Fact Check API key is not configured."
         )
-        return []
+        return [], False
 
     params = {
         "query": claim,
@@ -362,21 +382,21 @@ def find_fact_check_evidence(claim):
 
         return normalize_fact_checks(
             data
-        )
+        ), False
 
     except requests.RequestException as error:
         print(
             f"Google Fact Check API error: {error}"
         )
 
-        return []
+        return [], True
 
     except ValueError as error:
         print(
             f"Google Fact Check parsing error: {error}"
         )
 
-        return []
+        return [], True
 
 
 def find_web_evidence(claim):
@@ -385,6 +405,12 @@ def find_web_evidence(claim):
     return evidence.
 
     Only results from trusted sources are returned.
+
+    Returns:
+        tuple[list[dict], bool]
+            Normalized evidence and whether this source failed
+            (raised a request/parsing error) rather than simply
+            finding nothing.
     """
 
     api_key = os.getenv(
@@ -396,7 +422,7 @@ def find_web_evidence(claim):
             "Brave Search API key is not configured."
         )
 
-        return []
+        return [], False
 
     headers = {
         "Accept": "application/json",
@@ -423,21 +449,21 @@ def find_web_evidence(claim):
 
         return normalize_brave_results(
             data
-        )
+        ), False
 
     except requests.RequestException as error:
         print(
             f"Brave Search API error: {error}"
         )
 
-        return []
+        return [], True
 
     except ValueError as error:
         print(
             f"Brave Search parsing error: {error}"
         )
 
-        return []
+        return [], True
 
 
 def normalize_fact_checks(data):
