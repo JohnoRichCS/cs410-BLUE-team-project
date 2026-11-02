@@ -4,6 +4,7 @@ from models import db
 from models.submission import Submission
 from services.ai_service import analyze_claim
 from services.evidence_service import find_evidence
+from services.claim_classifier import classify_claim
 
 
 main = Blueprint("main", __name__)
@@ -17,6 +18,9 @@ def home():
 @main.route("/analyze", methods=["POST"])
 def analyze():
     claim = request.form["claim"]
+
+    # Issues #10 and #11: Classify the submitted claim
+    classification = classify_claim(claim)
 
     sources = find_evidence(claim)
 
@@ -40,7 +44,8 @@ def analyze():
         "results.html",
         claim=claim,
         result=result,
-        sources=sources
+        sources=sources,
+    classification=classification
     )
 
 
