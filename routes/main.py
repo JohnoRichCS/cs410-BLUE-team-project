@@ -27,15 +27,17 @@ CLAIM_MAX_LENGTH = 500
 def analyze():
     claim = request.form["claim"].strip()
 
-    # 3.1.2 / 3.1.3: reject an empty or out-of-range claim before starting
-    # the verification workflow.
+    # 3.1.2 / 3.1.3:
+    # Reject an empty or out-of-range claim before
+    # starting the verification workflow.
     if not (CLAIM_MIN_LENGTH <= len(claim) <= CLAIM_MAX_LENGTH):
         return render_template(
             "index.html",
             error="Enter a claim between 10 and 500 characters."
         )
 
-    # Issues #10 and #11: Classify the submitted claim
+    # Issues #10 and #11:
+    # Classify the submitted claim.
     classification = classify_claim(claim)
 
     # Retrieve evidence using the existing Google Fact Check
@@ -53,32 +55,58 @@ def analyze():
         sources
     )
 
+    # Generate the final fact-check result using the
+    # processed evidence.
     result = analyze_claim(
         claim=claim,
         evidence=sources
     )
 
+    # Issue #14:
+    # Save the completed verification, including the
+    # topic returned by claim classification.
     submission = Submission(
         claim=claim,
         verdict=result["verdict"],
         confidence=result["confidence"],
         summary=result["summary"],
-        explanation=result["explanation"]
+        explanation=result["explanation"],
+        topic=classification.get(
+            "category",
+            "Unclassified"
+        )
     )
 
     db.session.add(submission)
-    db.session.flush()  # assigns submission.id before Evidence rows reference it
 
-    # Issue #14: persist each retained evidence item against this
-    # verification so it can be reconstructed later (see /submissions/<id>).
+    # Assign submission.id before Evidence rows reference it.
+    db.session.flush()
+
+    # Issue #14:
+    # Persist each retained and processed evidence item.
     for source in sources:
-        db.session.add(Evidence(
-            submission_id=submission.id,
-            title=source.get("title", "Untitled source"),
-            url=source.get("url", ""),
-            publisher=source.get("publisher"),
-            excerpt=source.get("snippet")
-        ))
+        db.session.add(
+            Evidence(
+                submission_id=submission.id,
+                title=source.get(
+                    "title",
+                    "Untitled source"
+                ),
+                url=source.get(
+                    "url",
+                    ""
+                ),
+                publisher=source.get(
+                    "publisher"
+                ),
+                excerpt=source.get(
+                    "snippet"
+                ),
+                relevance=source.get(
+                    "relevance_score"
+                )
+            )
+        )
 
     db.session.commit()
 
@@ -95,7 +123,9 @@ def analyze():
 def history():
     saved_submissions = (
         Submission.query
-        .order_by(Submission.created_at.desc())
+        .order_by(
+            Submission.created_at.desc()
+        )
         .all()
     )
 
@@ -107,7 +137,10 @@ def history():
 
 @main.route("/submissions/<int:submission_id>")
 def submission_detail(submission_id):
-    submission = db.session.get(Submission, submission_id)
+    submission = db.session.get(
+        Submission,
+        submission_id
+    )
 
     if submission is None:
         abort(404)
@@ -131,7 +164,8 @@ def submissions():
                 "verdict": item.verdict,
                 "confidence": item.confidence,
                 "summary": item.summary,
-                "explanation": item.explanation
+                "explanation": item.explanation,
+                "topic": item.topic
             }
             for item in saved_submissions
         ]
