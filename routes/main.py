@@ -4,7 +4,11 @@ from models import db
 from models.submission import Submission
 from models.evidence import Evidence
 from services.ai_service import analyze_claim
-from services.evidence_service import find_evidence
+from services.evidence_service import (
+    find_evidence,
+    process_evidence,
+)
+from services.claim_classifier import classify_claim
 
 
 main = Blueprint("main", __name__)
@@ -15,11 +19,39 @@ def home():
     return render_template("index.html")
 
 
+CLAIM_MIN_LENGTH = 10
+CLAIM_MAX_LENGTH = 500
+
+
 @main.route("/analyze", methods=["POST"])
 def analyze():
-    claim = request.form["claim"]
+    claim = request.form["claim"].strip()
 
+    # 3.1.2 / 3.1.3: reject an empty or out-of-range claim before starting
+    # the verification workflow.
+    if not (CLAIM_MIN_LENGTH <= len(claim) <= CLAIM_MAX_LENGTH):
+        return render_template(
+            "index.html",
+            error="Enter a claim between 10 and 500 characters."
+        )
+
+    # Issues #10 and #11: Classify the submitted claim
+    classification = classify_claim(claim)
+
+    # Retrieve evidence using the existing Google Fact Check
+    # and Brave Search workflow.
     sources = find_evidence(claim)
+
+    # Issues #12 and #13:
+    # Apply topic-aware source ranking and relevance scoring.
+    sources = process_evidence(
+        claim,
+        classification.get(
+            "category",
+            "Unknown"
+        ),
+        sources
+    )
 
     result = analyze_claim(
         claim=claim,
@@ -54,7 +86,8 @@ def analyze():
         "results.html",
         claim=claim,
         result=result,
-        sources=sources
+        sources=sources,
+        classification=classification
     )
 
 

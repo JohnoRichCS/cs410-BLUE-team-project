@@ -4,12 +4,6 @@
 
 {% block content %}
 
-{% if result.verdict == "Unsupported" %}
-    {% set display_verdict = "Contradicted" %}
-{% else %}
-    {% set display_verdict = result.verdict %}
-{% endif %}
-
 <div class="mb-6">
     <h2 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">
         Claim Analyzed
@@ -19,7 +13,87 @@
         "{{ claim }}"
     </div>
 </div>
+<!-- Claim Classification: Issues #10 and #11 -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
 
+    <h3 class="text-lg font-bold text-slate-800 mb-4">
+        Claim Classification
+    </h3>
+
+    <div class="flex flex-wrap items-center gap-3 mb-4">
+
+        <span class="inline-flex items-center px-3 py-1 rounded-full
+                     text-sm font-medium bg-blue-100 text-blue-700">
+
+            {{ classification.category }}
+
+        </span>
+
+        <span class="inline-flex items-center px-3 py-1 rounded-full
+                     text-sm font-medium bg-slate-100 text-slate-700">
+
+            {{ classification.claim_type }}
+
+        </span>
+
+        {% if classification.is_conditional %}
+
+        <span class="inline-flex items-center px-3 py-1 rounded-full
+                     text-sm font-medium bg-amber-100 text-amber-700">
+
+            Conditional Claim
+
+        </span>
+
+        {% endif %}
+
+    </div>
+
+    {% if classification.conditions %}
+
+    <div class="mb-4">
+
+        <h4 class="text-sm font-bold text-slate-500 uppercase mb-2">
+            Conditions Identified
+        </h4>
+
+        <ul class="list-disc list-inside text-sm text-slate-700 space-y-1">
+
+            {% for condition in classification.conditions %}
+
+            <li>{{ condition }}</li>
+
+            {% endfor %}
+
+        </ul>
+
+    </div>
+
+    {% endif %}
+
+    {% if classification.missing_context %}
+
+    <div class="bg-slate-50 rounded-lg p-4 border border-slate-200">
+
+        <h4 class="text-sm font-bold text-slate-600 mb-2">
+            Additional Context to Verify
+        </h4>
+
+        <ul class="list-disc list-inside text-sm text-slate-600 space-y-1">
+
+            {% for item in classification.missing_context %}
+
+            <li>{{ item }}</li>
+
+            {% endfor %}
+
+        </ul>
+
+    </div>
+
+    {% endif %}
+
+</div>
 <div class="space-y-6">
 
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
@@ -28,7 +102,7 @@
 
             <div>
                 <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-amber-500 text-white mb-2 uppercase">
-                    VERDICT: {{ display_verdict }}
+                    VERDICT: {{ result.verdict }}
                 </span>
 
                 <h2 class="text-xl font-bold text-slate-800">

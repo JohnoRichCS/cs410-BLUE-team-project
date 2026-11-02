@@ -41,14 +41,8 @@
 
             <div class="text-left sm:text-right">
 
-                {% if submission.verdict == "Unsupported" %}
-                    {% set display_verdict = "Contradicted" %}
-                {% else %}
-                    {% set display_verdict = submission.verdict %}
-                {% endif %}
-
                 <div class="inline-flex items-center px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-sm font-bold uppercase">
-                    {{ display_verdict }}
+                    {{ submission.verdict }}
                 </div>
 
                 <p class="text-sm text-slate-500 mt-2">

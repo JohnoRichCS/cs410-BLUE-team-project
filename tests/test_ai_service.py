@@ -1,4 +1,4 @@
-from services.ai_service import analyze_claim, validate_result
+from services.ai_service import analyze_claim, normalize_verdict, validate_result
 
 
 def test_valid_result_is_preserved():
@@ -60,24 +60,41 @@ def test_uncertain_confidence_is_limited():
 def test_empty_claim_does_not_call_api():
     result = analyze_claim("", [])
 
-    assert result["verdict"] == "Uncertain"
+    assert result["verdict"] == "Unable to verify"
     assert result["confidence"] == 0
     assert result["summary"] == "No claim was provided."
 
 
-def test_no_evidence_returns_uncertain():
+def test_no_evidence_returns_unable_to_verify():
+    """3.7.2 / 3.7.4: no retained evidence maps to Unable to verify with
+    the SRS's exact required explanation text."""
+
     result = analyze_claim(
         "Did I eat bacon today?",
         []
     )
 
-    assert result["verdict"] == "Uncertain"
+    assert result["verdict"] == "Unable to verify"
     assert result["confidence"] == 0
     assert result["summary"] == "No evidence was found for this claim."
-    assert (
-        result["explanation"]
-        == (
-            "Faict could not find fact-check evidence related to the "
-            "submitted claim, so the claim cannot be verified."
-        )
-    )
+    assert result["explanation"] == "Not enough relevant evidence was found."
+
+
+def test_normalize_verdict_supported_is_unchanged():
+    assert normalize_verdict("Supported") == "Supported"
+
+
+def test_normalize_verdict_misleading_becomes_contradicted():
+    assert normalize_verdict("Misleading") == "Contradicted"
+
+
+def test_normalize_verdict_unsupported_becomes_contradicted():
+    assert normalize_verdict("Unsupported") == "Contradicted"
+
+
+def test_normalize_verdict_uncertain_becomes_unable_to_verify():
+    assert normalize_verdict("Uncertain") == "Unable to verify"
+
+
+def test_normalize_verdict_unknown_value_becomes_unable_to_verify():
+    assert normalize_verdict("Something else") == "Unable to verify"

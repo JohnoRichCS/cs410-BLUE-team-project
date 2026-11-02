@@ -16,11 +16,19 @@
         <button type="button" id="tab-image" onclick="highlightTab('tab-image')" class="text-slate-500 hover:text-slate-700 font-medium pb-2 transition">Image Upload</button>
     </div>
     
+    {% if error %}
+    <div class="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+        {{ error }}
+    </div>
+    {% endif %}
+
     <form method="POST" action="/analyze">
-        <textarea 
-            name="claim" 
-            class="w-full h-32 p-4 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none mb-4" 
-            placeholder="Paste a claim, article text, URL, or social media link here to verify..." 
+        <textarea
+            name="claim"
+            class="w-full h-32 p-4 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none mb-4"
+            placeholder="Paste a claim, article text, URL, or social media link here to verify..."
+            minlength="10"
+            maxlength="500"
             required></textarea>
         
         <div class="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
