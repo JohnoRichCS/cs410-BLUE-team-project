@@ -3,7 +3,10 @@ from flask import Blueprint, render_template, request
 from models import db
 from models.submission import Submission
 from services.ai_service import analyze_claim
-from services.evidence_service import find_evidence
+from services.evidence_service import (
+    find_evidence,
+    process_evidence,
+)
 from services.claim_classifier import classify_claim
 
 
@@ -22,7 +25,20 @@ def analyze():
     # Issues #10 and #11: Classify the submitted claim
     classification = classify_claim(claim)
 
+    # Retrieve evidence using the existing Google Fact Check
+    # and Brave Search workflow.
     sources = find_evidence(claim)
+
+    # Issues #12 and #13:
+    # Apply topic-aware source ranking and relevance scoring.
+    sources = process_evidence(
+        claim,
+        classification.get(
+            "category",
+            "Unknown"
+        ),
+        sources
+    )
 
     result = analyze_claim(
         claim=claim,
@@ -45,7 +61,7 @@ def analyze():
         claim=claim,
         result=result,
         sources=sources,
-    classification=classification
+        classification=classification
     )
 
 
