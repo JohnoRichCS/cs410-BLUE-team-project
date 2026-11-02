@@ -4,6 +4,7 @@ from services.evidence_service import (
     TOPIC_TRUSTED_DOMAINS,
     add_relevance_scores,
     calculate_relevance,
+    clean_snippet,
     find_evidence,
     find_fact_check_evidence,
     find_web_evidence,
@@ -21,8 +22,7 @@ from services.evidence_service import (
 
 class FakeResponse:
     """
-    Minimal stand-in for requests.Response used by
-    retrieval-error tests.
+    Minimal stand-in for requests.Response.
     """
 
     def __init__(self, json_data):
@@ -35,9 +35,42 @@ class FakeResponse:
         return self._json_data
 
 
-def raise_request_exception(*args, **kwargs):
+def raise_request_exception(
+    *args,
+    **kwargs
+):
     raise requests.RequestException(
         "simulated network failure"
+    )
+
+
+def test_clean_snippet_removes_html():
+    raw = (
+        "<strong>You may repay aid</strong> "
+        "&quot;depending on enrollment&quot;"
+    )
+
+    cleaned = clean_snippet(
+        raw
+    )
+
+    assert cleaned == (
+        'You may repay aid "depending on enrollment"'
+    )
+
+
+def test_clean_snippet_decodes_apostrophe():
+    raw = (
+        "didn&#x27;t complete "
+        "<strong>60 percent</strong>"
+    )
+
+    cleaned = clean_snippet(
+        raw
+    )
+
+    assert cleaned == (
+        "didn't complete 60 percent"
     )
 
 
@@ -163,12 +196,15 @@ def test_normalize_brave_results_filters_sources():
         "web": {
             "results": [
                 {
-                    "title": "NASA explanation",
+                    "title": (
+                        "<strong>NASA</strong> explanation"
+                    ),
                     "url": (
                         "https://www.nasa.gov/example"
                     ),
                     "description": (
-                        "Scientific explanation."
+                        "Scientific "
+                        "<strong>explanation</strong>."
                     )
                 },
                 {
@@ -186,7 +222,7 @@ def test_normalize_brave_results_filters_sources():
                         "https://www.reuters.com/example"
                     ),
                     "description": (
-                        "Reuters reporting."
+                        "Reuters &quot;reporting&quot;."
                     )
                 }
             ]
@@ -219,6 +255,33 @@ def test_normalize_brave_results_filters_sources():
         not in urls
     )
 
+    nasa = next(
+        item
+        for item in evidence
+        if "nasa.gov" in item["url"]
+    )
+
+    assert (
+        nasa["title"]
+        == "NASA explanation"
+    )
+
+    assert (
+        nasa["snippet"]
+        == "Scientific explanation."
+    )
+
+    reuters = next(
+        item
+        for item in evidence
+        if "reuters.com" in item["url"]
+    )
+
+    assert (
+        reuters["snippet"]
+        == 'Reuters "reporting".'
+    )
+
 
 def test_duplicate_sources_are_removed():
     evidence = [
@@ -243,7 +306,8 @@ def test_duplicate_sources_are_removed():
     assert len(result) == 1
 
 
-# ISSUE #12: TOPIC-AWARE SOURCE RANKING
+# ISSUE #12:
+# TOPIC-AWARE SOURCE RANKING
 
 
 def test_financial_aid_topic_domains():
@@ -259,6 +323,15 @@ def test_education_finance_maps_to_financial_aid():
     assert (
         normalize_topic(
             "Education Finance"
+        )
+        == "financial_aid"
+    )
+
+
+def test_education_and_finance_maps_to_financial_aid():
+    assert (
+        normalize_topic(
+            "Education and Finance"
         )
         == "financial_aid"
     )
@@ -326,7 +399,8 @@ def test_financial_aid_primary_sources_rank_first():
     )
 
 
-# ISSUE #13: EVIDENCE RELEVANCE SCORING
+# ISSUE #13:
+# EVIDENCE RELEVANCE SCORING
 
 
 def test_relevance_score_exact_overlap():
@@ -495,8 +569,10 @@ def test_fact_check_returns_not_failed_when_key_missing(
         raising=False
     )
 
-    evidence, failed = find_fact_check_evidence(
-        "Any claim"
+    evidence, failed = (
+        find_fact_check_evidence(
+            "Any claim"
+        )
     )
 
     assert evidence == []
@@ -516,8 +592,10 @@ def test_fact_check_returns_failed_on_request_exception(
         raise_request_exception
     )
 
-    evidence, failed = find_fact_check_evidence(
-        "Any claim"
+    evidence, failed = (
+        find_fact_check_evidence(
+            "Any claim"
+        )
     )
 
     assert evidence == []
@@ -541,8 +619,10 @@ def test_fact_check_returns_not_failed_on_success_with_no_results(
         )
     )
 
-    evidence, failed = find_fact_check_evidence(
-        "Any claim"
+    evidence, failed = (
+        find_fact_check_evidence(
+            "Any claim"
+        )
     )
 
     assert evidence == []
@@ -562,8 +642,10 @@ def test_web_evidence_returns_failed_on_request_exception(
         raise_request_exception
     )
 
-    evidence, failed = find_web_evidence(
-        "Any claim"
+    evidence, failed = (
+        find_web_evidence(
+            "Any claim"
+        )
     )
 
     assert evidence == []
@@ -599,11 +681,6 @@ def test_find_evidence_returns_none_when_both_sources_fail(
 def test_find_evidence_returns_empty_list_when_one_source_fails(
     monkeypatch
 ):
-    """
-    One source fails while the other succeeds but finds
-    nothing. This is not total retrieval failure.
-    """
-
     monkeypatch.setenv(
         "GOOGLE_FACT_CHECK_API_KEY",
         "fake-key"
@@ -621,22 +698,36 @@ def test_find_evidence_returns_empty_list_when_one_source_fails(
     ):
         if (
             url
-            == (
-                "https://factchecktools.googleapis.com/"
-                "v1alpha1/claims:search"
-            )
+            == FACT_CHECK_API_URL
         ):
             raise requests.RequestException(
                 "simulated network failure"
             )
 
-        return FakeResponse(
-            {
-                "web": {
-                    "results": []
-                }
+        return FakeResponse({
+            "web": {
+                "results": []
             }
-        )
+        })
+
+    def fake_get(
+        url,
+        *args,
+        **kwargs
+    ):
+        if url == (
+            "https://factchecktools.googleapis.com/"
+            "v1alpha1/claims:search"
+        ):
+            raise requests.RequestException(
+                "simulated network failure"
+            )
+
+        return FakeResponse({
+            "web": {
+                "results": []
+            }
+        })
 
     monkeypatch.setattr(
         "services.evidence_service.requests.get",
@@ -654,11 +745,6 @@ def test_find_evidence_returns_empty_list_when_one_source_fails(
 def test_find_evidence_returns_empty_list_when_no_keys_configured(
     monkeypatch
 ):
-    """
-    Sources that are simply unconfigured are not treated
-    as retrieval failures.
-    """
-
     monkeypatch.delenv(
         "GOOGLE_FACT_CHECK_API_KEY",
         raising=False

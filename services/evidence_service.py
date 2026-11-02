@@ -1,5 +1,6 @@
 import os
 import re
+from html import unescape
 from urllib.parse import urlparse
 
 import requests
@@ -19,14 +20,6 @@ BRAVE_SEARCH_API_URL = (
 
 
 # TRUSTED SOURCE ALLOWLIST
-
-# This list is used only for Brave Search fallback results.
-
-# Google Fact Check results are already coming from Google's indexed fact
-# checking ecosystem and are handled separately.
-
-# Rejects random blogs, forums, social media posts, and other low quality sources.
-
 
 TRUSTED_DOMAINS = {
 
@@ -77,7 +70,7 @@ TRUSTED_DOMAINS = {
     "checkyourfact.com",
     "aap.com.au",
 
-    # SCIENCE JOURNALS / SCIENCE PUBLICATIONS
+    # SCIENCE JOURNALS / PUBLICATIONS
 
     "nature.com",
     "science.org",
@@ -164,7 +157,7 @@ TRUSTED_DOMAINS = {
     "fcc.gov",
     "cisa.gov",
 
-    # INTERNATIONAL GOVERNMENT / MULTINATIONAL ORGANIZATIONS
+    # INTERNATIONAL / MULTINATIONAL ORGANIZATIONS
 
     "un.org",
     "unesco.org",
@@ -188,25 +181,12 @@ TRUSTED_DOMAINS = {
 
     # ECONOMICS / FINANCIAL DATA
 
-    "federalreserve.gov",
     "fred.stlouisfed.org",
     "stlouisfed.org",
-
-    "bls.gov",
-    "bea.gov",
-    "census.gov",
-
-    "worldbank.org",
-    "imf.org",
-    "oecd.org",
 
     # LAW / LEGAL INFORMATION
 
     "law.cornell.edu",
-    "supremecourt.gov",
-    "uscourts.gov",
-    "justice.gov",
-    "congress.gov",
 
     # UNIVERSITY / ACADEMIC SOURCES
 
@@ -237,15 +217,11 @@ TRUSTED_DOMAINS = {
     # TECHNOLOGY / CYBERSECURITY
 
     "nist.gov",
-    "cisa.gov",
-
     "microsoft.com",
     "apple.com",
     "google.com",
     "cloud.google.com",
-
     "aws.amazon.com",
-
     "mozilla.org",
 
     # REFERENCE / GENERAL KNOWLEDGE
@@ -274,7 +250,8 @@ TRUSTED_DOMAINS = {
 }
 
 
-# ISSUE #12: TOPIC-AWARE SOURCE RANKING
+# ISSUE #12:
+# TOPIC-AWARE SOURCE RANKING
 
 TOPIC_TRUSTED_DOMAINS = {
     "financial_aid": {
@@ -284,7 +261,8 @@ TOPIC_TRUSTED_DOMAINS = {
 }
 
 
-# ISSUE #13: EVIDENCE RELEVANCE SCORING
+# ISSUE #13:
+# EVIDENCE RELEVANCE SCORING
 
 STOPWORDS = {
     "a",
@@ -333,32 +311,16 @@ def find_evidence(claim):
     1. Google Fact Check Tools API
     2. Brave Search API fallback
 
-    Google Fact Check is preferred because its results contain
-    published fact-check reviews.
-
-    Brave Search is used when no Google fact-check evidence is found.
-
     Returns:
-        list[dict] | None
+        list[dict]:
+            Evidence was retrieved successfully.
 
-        A list (possibly empty) on success - including when a source
-        is simply not configured, which is not a failure.
+        []:
+            Retrieval worked but no evidence was found,
+            or no external API is configured.
 
-        None specifically when every attempted source raised a
-        request/parsing error (3.4.4, 4.4): callers should treat this
-        as "evidence sources are temporarily unavailable" rather than
-        "no evidence exists for this claim."
-
-        Example of a non-empty list:
-
-        [
-            {
-                "publisher": "nasa.gov",
-                "title": "Example article",
-                "url": "https://...",
-                "snippet": "Relevant evidence..."
-            }
-        ]
+        None:
+            Every configured evidence source failed.
     """
 
     if not claim or not claim.strip():
@@ -366,27 +328,27 @@ def find_evidence(claim):
 
     claim = claim.strip()
 
-    # First choice: Google Fact Check
-
-    fact_check_results, fact_check_failed = find_fact_check_evidence(claim)
+    fact_check_results, fact_check_failed = (
+        find_fact_check_evidence(claim)
+    )
 
     if fact_check_results:
         return remove_duplicate_evidence(
             fact_check_results
         )
 
-    # Fallback: Brave Search
-
-    web_results, web_failed = find_web_evidence(claim)
+    web_results, web_failed = (
+        find_web_evidence(claim)
+    )
 
     if web_results:
         return remove_duplicate_evidence(
             web_results
         )
 
-    # 3.4.4 / 4.4: continue with whatever source was available; only
-    # report "unavailable" when every attempted source actually failed
-    # (not merely unconfigured or genuinely empty).
+    # Issue #20 / requirement 3.4.4:
+    # Only return None when all configured evidence
+    # sources actually failed.
     if fact_check_failed and web_failed:
         return None
 
@@ -398,10 +360,11 @@ def find_fact_check_evidence(claim):
     Search Google's Fact Check Tools API.
 
     Returns:
-        tuple[list[dict], bool]
-            Normalized evidence (passable directly into analyze_claim())
-            and whether this source failed (raised a request/parsing
-            error) rather than simply finding nothing.
+        tuple:
+            (evidence_items, failed)
+
+    failed is True only when the configured service
+    was attempted and failed.
     """
 
     api_key = os.getenv(
@@ -412,6 +375,7 @@ def find_fact_check_evidence(claim):
         print(
             "Google Fact Check API key is not configured."
         )
+
         return [], False
 
     params = {
@@ -432,9 +396,10 @@ def find_fact_check_evidence(claim):
 
         data = response.json()
 
-        return normalize_fact_checks(
-            data
-        ), False
+        return (
+            normalize_fact_checks(data),
+            False
+        )
 
     except requests.RequestException as error:
         print(
@@ -456,13 +421,12 @@ def find_web_evidence(claim):
     Search Brave Search when Google Fact Check does not
     return evidence.
 
-    Only results from trusted sources are returned.
-
     Returns:
-        tuple[list[dict], bool]
-            Normalized evidence and whether this source failed
-            (raised a request/parsing error) rather than simply
-            finding nothing.
+        tuple:
+            (evidence_items, failed)
+
+    failed is True only when the configured service
+    was attempted and failed.
     """
 
     api_key = os.getenv(
@@ -499,9 +463,10 @@ def find_web_evidence(claim):
 
         data = response.json()
 
-        return normalize_brave_results(
-            data
-        ), False
+        return (
+            normalize_brave_results(data),
+            False
+        )
 
     except requests.RequestException as error:
         print(
@@ -516,6 +481,53 @@ def find_web_evidence(claim):
         )
 
         return [], True
+
+
+def clean_snippet(text):
+    """
+    Convert HTML-heavy search snippets into readable
+    plain text.
+
+    Examples:
+
+    <strong>financial aid</strong>
+    becomes:
+    financial aid
+
+    &quot;example&quot;
+    becomes:
+    "example"
+    """
+
+    if not text:
+        return ""
+
+    # Decode HTML entities:
+    # &quot; -> "
+    # &#x27; -> '
+    # &amp; -> &
+    text = unescape(
+        str(text)
+    )
+
+    # Remove HTML tags:
+    # <strong>
+    # </strong>
+    # <em>
+    text = re.sub(
+        r"<[^>]+>",
+        "",
+        text
+    )
+
+    # Collapse repeated spaces/newlines.
+    text = re.sub(
+        r"\s+",
+        " ",
+        text
+    )
+
+    return text.strip()
 
 
 def normalize_fact_checks(data):
@@ -583,9 +595,9 @@ def normalize_fact_checks(data):
 
             evidence.append({
                 "publisher": publisher,
-                "title": title,
+                "title": clean_snippet(title),
                 "url": url,
-                "snippet": snippet
+                "snippet": clean_snippet(snippet)
             })
 
     return evidence
@@ -598,8 +610,8 @@ def normalize_brave_results(data):
 
     Only trusted domains are accepted.
 
-    All trusted candidates are retained here so topic-aware
-    ranking and relevance scoring can be applied later.
+    All trusted candidates are retained so relevance
+    scoring and topic-aware ranking can be applied later.
     """
 
     evidence = []
@@ -628,14 +640,18 @@ def normalize_brave_results(data):
         ):
             continue
 
-        title = result.get(
-            "title",
-            "Web source"
+        title = clean_snippet(
+            result.get(
+                "title",
+                "Web source"
+            )
         )
 
-        description = result.get(
-            "description",
-            "No description available."
+        description = clean_snippet(
+            result.get(
+                "description",
+                "No description available."
+            )
         )
 
         evidence.append({
@@ -692,10 +708,9 @@ def is_trusted_domain(domain):
 
     - U.S. government domains
     - U.S. military domains
-    - accredited U.S. education domains
+    - U.S. education domains
 
-    Also accepts domains explicitly listed in
-    TRUSTED_DOMAINS.
+    Also accepts explicitly allowlisted domains.
     """
 
     if not domain:
@@ -707,28 +722,20 @@ def is_trusted_domain(domain):
         .strip()
     )
 
-    # Government
-
     if domain.endswith(
         ".gov"
     ):
         return True
-
-    # Education
 
     if domain.endswith(
         ".edu"
     ):
         return True
 
-    # Military
-
     if domain.endswith(
         ".mil"
     ):
         return True
-
-    # Explicit allowlist
 
     for trusted_domain in TRUSTED_DOMAINS:
 
@@ -747,25 +754,42 @@ def normalize_topic(category):
     """
     Convert classifier categories into stable internal
     topic names used by evidence ranking.
+
+    Shaavon's classifier may use slightly different
+    category wording for similar topics.
     """
 
-    if not isinstance(category, str):
+    if not isinstance(
+        category,
+        str
+    ):
         return "other"
 
-    value = category.lower().strip()
+    value = (
+        category
+        .lower()
+        .strip()
+    )
 
     if (
         "financial aid" in value
         or "student aid" in value
         or value == "education finance"
+        or value == "education and finance"
         or value == "college finance"
     ):
         return "financial_aid"
 
-    return value.replace(" ", "_")
+    return value.replace(
+        " ",
+        "_"
+    )
 
 
-def is_topic_priority_source(url, topic):
+def is_topic_priority_source(
+    url,
+    topic
+):
     """
     Return True when a source belongs to the configured
     primary/trusted source list for a topic.
@@ -775,9 +799,12 @@ def is_topic_priority_source(url, topic):
         url
     )
 
-    trusted_domains = TOPIC_TRUSTED_DOMAINS.get(
-        topic,
-        set()
+    trusted_domains = (
+        TOPIC_TRUSTED_DOMAINS
+        .get(
+            topic,
+            set()
+        )
     )
 
     for trusted_domain in trusted_domains:
@@ -795,7 +822,7 @@ def is_topic_priority_source(url, topic):
 
 def extract_terms(text):
     """
-    Return distinct non-stopword terms from a string.
+    Return distinct non-stopword terms from text.
     """
 
     words = re.findall(
@@ -810,12 +837,15 @@ def extract_terms(text):
     }
 
 
-def calculate_relevance(claim, evidence):
+def calculate_relevance(
+    claim,
+    evidence
+):
     """
     Calculate evidence relevance from 0.00 to 1.00.
 
     Relevance is the proportion of distinct non-stopword
-    claim terms that appear in the evidence title or snippet.
+    claim terms appearing in the evidence title/snippet.
     """
 
     claim_terms = extract_terms(
@@ -858,10 +888,13 @@ def calculate_relevance(claim, evidence):
     )
 
 
-def add_relevance_scores(claim, evidence_items):
+def add_relevance_scores(
+    claim,
+    evidence_items
+):
     """
     Add relevance scores and remove evidence below
-    the configured relevance threshold.
+    the configured minimum threshold.
     """
 
     scored_items = []
@@ -870,9 +903,11 @@ def add_relevance_scores(claim, evidence_items):
 
         item = evidence.copy()
 
-        item["relevance_score"] = calculate_relevance(
-            claim,
-            item
+        item["relevance_score"] = (
+            calculate_relevance(
+                claim,
+                item
+            )
         )
 
         if (
@@ -886,22 +921,27 @@ def add_relevance_scores(claim, evidence_items):
     return scored_items
 
 
-def rank_evidence(evidence_items, topic):
+def rank_evidence(
+    evidence_items,
+    topic
+):
     """
     Rank evidence in two stages:
 
     1. Topic-priority sources first.
-    2. Highest relevance first within each priority group.
+    2. Highest relevance first within each group.
     """
 
     def ranking_key(item):
 
-        is_priority = is_topic_priority_source(
-            item.get(
-                "url",
-                ""
-            ),
-            topic
+        is_priority = (
+            is_topic_priority_source(
+                item.get(
+                    "url",
+                    ""
+                ),
+                topic
+            )
         )
 
         relevance = item.get(
@@ -920,26 +960,34 @@ def rank_evidence(evidence_items, topic):
     )
 
 
-def process_evidence(claim, category, evidence_items):
+def process_evidence(
+    claim,
+    category,
+    evidence_items
+):
     """
     Apply topic normalization, relevance scoring,
     threshold filtering, and topic-aware ranking.
 
-    Returns no more than MAX_EVIDENCE_ITEMS items.
+    Returns no more than MAX_EVIDENCE_ITEMS.
     """
 
     topic = normalize_topic(
         category
     )
 
-    scored_items = add_relevance_scores(
-        claim,
-        evidence_items
+    scored_items = (
+        add_relevance_scores(
+            claim,
+            evidence_items
+        )
     )
 
-    ranked_items = rank_evidence(
-        scored_items,
-        topic
+    ranked_items = (
+        rank_evidence(
+            scored_items,
+            topic
+        )
     )
 
     return ranked_items[
@@ -947,12 +995,11 @@ def process_evidence(claim, category, evidence_items):
     ]
 
 
-def remove_duplicate_evidence(evidence):
+def remove_duplicate_evidence(
+    evidence
+):
     """
-    Remove duplicate sources based on their URL.
-
-    Search APIs may occasionally return the same article
-    more than once.
+    Remove duplicate sources based on URL.
     """
 
     unique_evidence = []
@@ -963,7 +1010,10 @@ def remove_duplicate_evidence(evidence):
 
         url = (
             source
-            .get("url", "")
+            .get(
+                "url",
+                ""
+            )
             .strip()
         )
 
