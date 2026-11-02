@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}Faíct - Verification Detail{% endblock %}
+
+{% block content %}
+
+{% if submission.verdict == "Unsupported" %}
+    {% set display_verdict = "Contradicted" %}
+{% else %}
+    {% set display_verdict = submission.verdict %}
+{% endif %}
+
+<div class="mb-6">
+    <a
+        href="/history"
+        class="text-blue-600 font-semibold hover:underline flex items-center"
+    >
+        <svg
+            class="w-4 h-4 mr-1"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+        >
+            <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+            ></path>
+        </svg>
+        Back to history
+    </a>
+</div>
+
+<div class="mb-6">
+    <h2 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">
+        Claim Analyzed
+    </h2>
+
+    <div class="bg-slate-100 p-4 rounded-lg border border-slate-200 text-slate-700 italic">
+        "{{ submission.claim }}"
+    </div>
+</div>
+
+<div class="space-y-6">
+
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+
+        <div class="bg-amber-50 border-b border-amber-100 p-6 flex items-start sm:items-center justify-between flex-col sm:flex-row">
+
+            <div>
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-700 mb-2">
+                    {{ submission.topic }}
+                </span>
+
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-amber-500 text-white mb-2 uppercase ml-2">
+                    VERDICT: {{ display_verdict }}
+                </span>
+
+                <h2 class="text-xl font-bold text-slate-800">
+                    {{ submission.summary }}
+                </h2>
+            </div>
+
+            <div class="mt-4 sm:mt-0 w-full sm:w-auto text-center bg-white p-3 rounded-lg shadow-sm border border-slate-100">
+
+                <div class="text-3xl font-extrabold text-blue-600">
+                    {{ submission.confidence }}%
+                </div>
+
+                <div class="text-xs font-bold text-slate-500 uppercase tracking-wide">
+                    Confidence Score
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="p-6">
+
+            <h3 class="text-sm font-bold text-slate-500 uppercase mb-2">
+                Analysis Explanation
+            </h3>
+
+            <p class="text-slate-700 leading-relaxed mb-4">
+                {{ submission.explanation }}
+            </p>
+
+            {% if submission.created_at %}
+            <div class="text-xs text-slate-400">
+                Analyzed:
+                {{ submission.created_at.strftime("%B %d, %Y at %I:%M %p") }}
+            </div>
+            {% endif %}
+
+        </div>
+
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+
+        <h3 class="text-lg font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">
+            Saved Evidence Sources
+        </h3>
+
+        {% if evidence_items %}
+
+        <ul class="space-y-4">
+
+            {% for item in evidence_items %}
+
+            <li class="flex items-start">
+
+                <svg
+                    class="w-5 h-5 text-green-500 mt-0.5 mr-3 flex-shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    ></path>
+                </svg>
+
+                <div>
+
+                    <a
+                        href="{{ item.url }}"
+                        target="_blank"
+                        class="text-blue-600 font-semibold hover:underline"
+                    >
+                        {% if item.publisher %}{{ item.publisher }}: {% endif %}"{{ item.title }}"
+                    </a>
+
+                    {% if item.excerpt %}
+                    <p class="text-sm text-slate-500 mt-1">
+                        {{ item.excerpt }}
+                    </p>
+                    {% endif %}
+
+                    {% if item.relevance is not none %}
+                    <p class="text-xs text-slate-400 mt-1">
+                        Relevance: {{ "%.2f"|format(item.relevance) }}
+                    </p>
+                    {% endif %}
+
+                </div>
+
+            </li>
+
+            {% endfor %}
+
+        </ul>
+
+        {% else %}
+
+        <p class="text-sm text-slate-500">
+            No evidence sources were saved for this verification.
+        </p>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+{% endblock %}

@@ -1,4 +1,5 @@
 import os
+import re
 from urllib.parse import urlparse
 
 import requests
@@ -21,7 +22,8 @@ BRAVE_SEARCH_API_URL = (
 
 # This list is used only for Brave Search fallback results.
 
-# Google Fact Check results are already coming from Google's indexed fact checking ecosystem and are handled separately.
+# Google Fact Check results are already coming from Google's indexed fact
+# checking ecosystem and are handled separately.
 
 # Rejects random blogs, forums, social media posts, and other low quality sources.
 
@@ -270,6 +272,56 @@ TRUSTED_DOMAINS = {
     "fec.gov",
     "eac.gov",
 }
+
+
+# ISSUE #12: TOPIC-AWARE SOURCE RANKING
+
+TOPIC_TRUSTED_DOMAINS = {
+    "financial_aid": {
+        "studentaid.gov",
+        "odu.edu",
+    }
+}
+
+
+# ISSUE #13: EVIDENCE RELEVANCE SCORING
+
+STOPWORDS = {
+    "a",
+    "an",
+    "and",
+    "are",
+    "as",
+    "at",
+    "be",
+    "by",
+    "for",
+    "from",
+    "how",
+    "i",
+    "if",
+    "in",
+    "is",
+    "it",
+    "my",
+    "of",
+    "on",
+    "one",
+    "or",
+    "that",
+    "the",
+    "this",
+    "to",
+    "was",
+    "what",
+    "when",
+    "will",
+    "with",
+}
+
+
+MIN_RELEVANCE = 0.20
+MAX_EVIDENCE_ITEMS = 5
 
 
 def find_evidence(claim):
@@ -545,6 +597,9 @@ def normalize_brave_results(data):
     evidence structure.
 
     Only trusted domains are accepted.
+
+    All trusted candidates are retained here so topic-aware
+    ranking and relevance scoring can be applied later.
     """
 
     evidence = []
@@ -589,10 +644,6 @@ def normalize_brave_results(data):
             "url": url,
             "snippet": description
         })
-
-        # Keeps API usage and AI prompt size low
-        if len(evidence) >= 5:
-            break
 
     return evidence
 
@@ -684,18 +735,216 @@ def is_trusted_domain(domain):
         if domain == trusted_domain:
             return True
 
-        # Allows legitimate subdomains:
-        #
-        # climate.nasa.gov
-        # health.harvard.edu
-        # fred.stlouisfed.org
-        #
         if domain.endswith(
             "." + trusted_domain
         ):
             return True
 
     return False
+
+
+def normalize_topic(category):
+    """
+    Convert classifier categories into stable internal
+    topic names used by evidence ranking.
+    """
+
+    if not isinstance(category, str):
+        return "other"
+
+    value = category.lower().strip()
+
+    if (
+        "financial aid" in value
+        or "student aid" in value
+        or value == "education finance"
+        or value == "college finance"
+    ):
+        return "financial_aid"
+
+    return value.replace(" ", "_")
+
+
+def is_topic_priority_source(url, topic):
+    """
+    Return True when a source belongs to the configured
+    primary/trusted source list for a topic.
+    """
+
+    domain = get_domain(
+        url
+    )
+
+    trusted_domains = TOPIC_TRUSTED_DOMAINS.get(
+        topic,
+        set()
+    )
+
+    for trusted_domain in trusted_domains:
+
+        if domain == trusted_domain:
+            return True
+
+        if domain.endswith(
+            "." + trusted_domain
+        ):
+            return True
+
+    return False
+
+
+def extract_terms(text):
+    """
+    Return distinct non-stopword terms from a string.
+    """
+
+    words = re.findall(
+        r"[a-z0-9]+",
+        (text or "").lower()
+    )
+
+    return {
+        word
+        for word in words
+        if word not in STOPWORDS
+    }
+
+
+def calculate_relevance(claim, evidence):
+    """
+    Calculate evidence relevance from 0.00 to 1.00.
+
+    Relevance is the proportion of distinct non-stopword
+    claim terms that appear in the evidence title or snippet.
+    """
+
+    claim_terms = extract_terms(
+        claim
+    )
+
+    if not claim_terms:
+        return 0.0
+
+    evidence_text = " ".join([
+        evidence.get(
+            "title",
+            ""
+        ),
+        evidence.get(
+            "snippet",
+            ""
+        ),
+    ])
+
+    evidence_terms = extract_terms(
+        evidence_text
+    )
+
+    matching_terms = (
+        claim_terms
+        .intersection(
+            evidence_terms
+        )
+    )
+
+    score = (
+        len(matching_terms)
+        / len(claim_terms)
+    )
+
+    return round(
+        score,
+        2
+    )
+
+
+def add_relevance_scores(claim, evidence_items):
+    """
+    Add relevance scores and remove evidence below
+    the configured relevance threshold.
+    """
+
+    scored_items = []
+
+    for evidence in evidence_items:
+
+        item = evidence.copy()
+
+        item["relevance_score"] = calculate_relevance(
+            claim,
+            item
+        )
+
+        if (
+            item["relevance_score"]
+            >= MIN_RELEVANCE
+        ):
+            scored_items.append(
+                item
+            )
+
+    return scored_items
+
+
+def rank_evidence(evidence_items, topic):
+    """
+    Rank evidence in two stages:
+
+    1. Topic-priority sources first.
+    2. Highest relevance first within each priority group.
+    """
+
+    def ranking_key(item):
+
+        is_priority = is_topic_priority_source(
+            item.get(
+                "url",
+                ""
+            ),
+            topic
+        )
+
+        relevance = item.get(
+            "relevance_score",
+            0.0
+        )
+
+        return (
+            0 if is_priority else 1,
+            -relevance
+        )
+
+    return sorted(
+        evidence_items,
+        key=ranking_key
+    )
+
+
+def process_evidence(claim, category, evidence_items):
+    """
+    Apply topic normalization, relevance scoring,
+    threshold filtering, and topic-aware ranking.
+
+    Returns no more than MAX_EVIDENCE_ITEMS items.
+    """
+
+    topic = normalize_topic(
+        category
+    )
+
+    scored_items = add_relevance_scores(
+        claim,
+        evidence_items
+    )
+
+    ranked_items = rank_evidence(
+        scored_items,
+        topic
+    )
+
+    return ranked_items[
+        :MAX_EVIDENCE_ITEMS
+    ]
 
 
 def remove_duplicate_evidence(evidence):

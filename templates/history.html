@@ -20,7 +20,10 @@
 
     {% for submission in submissions %}
 
-    <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
+    <a
+        href="{{ url_for('main.submission_detail', submission_id=submission.id) }}"
+        class="block bg-white border border-slate-200 rounded-xl shadow-sm p-5 hover:border-blue-300 hover:shadow-md transition"
+    >
 
         <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
 
@@ -38,14 +41,8 @@
 
             <div class="text-left sm:text-right">
 
-                {% if submission.verdict == "Unsupported" %}
-                    {% set display_verdict = "Contradicted" %}
-                {% else %}
-                    {% set display_verdict = submission.verdict %}
-                {% endif %}
-
                 <div class="inline-flex items-center px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-sm font-bold uppercase">
-                    {{ display_verdict }}
+                    {{ submission.verdict }}
                 </div>
 
                 <p class="text-sm text-slate-500 mt-2">
@@ -77,7 +74,7 @@
 
         {% endif %}
 
-    </div>
+    </a>
 
     {% endfor %}
 

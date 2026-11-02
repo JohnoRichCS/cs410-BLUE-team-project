@@ -10,7 +10,7 @@ class Submission(db.Model):
     in one table.
 
     TODO DATABASE:
-    
+
     """
 
     id = db.Column(db.Integer, primary_key=True)
@@ -18,6 +18,15 @@ class Submission(db.Model):
     claim = db.Column(
         db.Text,
         nullable=False
+    )
+
+    # Populated once claim classification (issue #10) is merged into
+    # main; until then this defaults to "Unclassified" rather than
+    # depending on the unmerged feature/claim-classification branch.
+    topic = db.Column(
+        db.String(100),
+        nullable=False,
+        default="Unclassified"
     )
 
     verdict = db.Column(
