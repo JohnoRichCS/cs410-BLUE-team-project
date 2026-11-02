@@ -29,10 +29,32 @@ def test_faict_skeleton_workflow(app, client, monkeypatch):
         "explanation": "This is a test explanation."
     }
 
+    fake_classification = {
+        "category": "Science",
+        "claim_type": "Factual",
+        "is_conditional": False,
+        "conditions": [],
+        "missing_context": []
+    }
+
     # Replace external services during this test
+
+    monkeypatch.setattr(
+        "routes.main.classify_claim",
+        lambda claim: fake_classification
+    )
+
     monkeypatch.setattr(
         "routes.main.find_evidence",
         lambda claim: fake_sources
+    )
+
+    # Relevance and ranking are tested separately in
+    # test_evidence_service.py. Keep this test focused on
+    # the Flask application workflow.
+    monkeypatch.setattr(
+        "routes.main.process_evidence",
+        lambda claim, category, evidence_items: evidence_items
     )
 
     monkeypatch.setattr(
@@ -41,34 +63,41 @@ def test_faict_skeleton_workflow(app, client, monkeypatch):
     )
 
     # 1. Homepage loads
+
     response = client.get("/")
 
     assert response.status_code == 200
 
     # 2. Submit a claim
+
     test_claim = "The Earth has two moons."
 
     response = client.post(
         "/analyze",
-        data={"claim": test_claim}
+        data={
+            "claim": test_claim
+        }
     )
 
     assert response.status_code == 200
 
     # 3. Analysis reached the results page
+
     assert b"Unable to verify" in response.data
     assert b"75%" in response.data
     assert b"Test analysis result." in response.data
 
     # 4. Evidence reached the results page
+
     assert b"Test Source" in response.data
     assert b"Test Evidence" in response.data
 
-    # 5. Submission was saved
-    with app.app_context():
-        submission = Submission.query.first()
+    # 5. Submission was saved to the database
 
-        assert submission is not None
-        assert submission.claim == test_claim
-        assert submission.verdict == "Unable to verify"
-        assert submission.confidence == 75
+    with app.app_context():
+        saved_submission = Submission.query.first()
+
+        assert saved_submission is not None
+        assert saved_submission.claim == test_claim
+        assert saved_submission.verdict == "Unable to verify"
+        assert saved_submission.confidence == 75
