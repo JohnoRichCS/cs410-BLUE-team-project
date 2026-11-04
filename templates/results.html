@@ -11,6 +11,22 @@
     {% set display_verdict = "Unable to verify" %}
 {% endif %}
 
+{% if display_verdict == "Supported" %}
+    {% set verdict_class = "bg-green-100 text-green-800 border-green-200" %}
+{% elif display_verdict in ["Unsupported", "Contradicted"] %}
+    {% set verdict_class = "bg-red-100 text-red-800 border-red-200" %}
+{% else %}
+    {% set verdict_class = "bg-orange-100 text-orange-800 border-orange-200" %}
+{% endif %}
+
+{% if display_verdict == "Supported" %}
+    {% set verdict_container_class = "bg-green-50 border-green-100" %}
+{% elif display_verdict in ["Unsupported", "Contradicted"] %}
+    {% set verdict_container_class = "bg-red-50 border-red-100" %}
+{% else %}
+    {% set verdict_container_class = "bg-orange-50 border-orange-100" %}
+{% endif %}
+
 <div class="mb-6">
     <h2 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">
         Claim Analyzed
@@ -90,10 +106,10 @@
 
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
 
-        <div class="bg-amber-50 border-b border-amber-100 p-6 flex items-start sm:items-center justify-between flex-col sm:flex-row">
+        <div class="{{ verdict_container_class }} border-b p-6 flex items-start sm:items-center justify-between flex-col sm:flex-row">
 
             <div>
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-amber-500 text-white mb-2 uppercase">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold mb-2 uppercase border {{ verdict_class }}">
                     Credibility verdict: {{ display_verdict }}
                 </span>
 

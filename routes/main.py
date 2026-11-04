@@ -206,3 +206,12 @@ def submissions():
             for item in saved_submissions
         ]
     }
+
+@main.route("/api-documentation")
+def api_documentation():
+    return render_template("api_documentation.html")
+
+
+@main.route("/account")
+def account():
+    return render_template("account.html")
