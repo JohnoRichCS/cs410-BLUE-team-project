@@ -140,7 +140,11 @@
 
             {% if display_verdict == "Unable to verify" %}
             <p class="text-slate-700 leading-relaxed mb-4">
+                {% if result.summary == "Evidence retrieval failed." %}
+                {{ result.explanation }}
+                {% else %}
                 Not enough relevant evidence was found.
+                {% endif %}
             </p>
             {% else %}
             <p class="text-slate-700 leading-relaxed mb-4">
@@ -250,6 +254,105 @@
         {% endif %}
 
     </div>
+    <!-- FAÍCT Action Plan -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+
+        <h3 class="text-lg font-bold text-slate-800 mb-2">
+            Your Next Steps
+        </h3>
+
+        <p class="text-sm text-slate-500 mb-4">
+            Use this checklist to decide what to verify next.
+            These suggestions are not a substitute for official guidance.
+        </p>
+
+        <ul id="action-checklist" class="space-y-3">
+
+            {% if sources %}
+            <li>
+                <label class="flex items-start gap-3 text-slate-700">
+                    <input type="checkbox" class="action-checkbox mt-1">
+                    <span>Review the supporting evidence and trusted sources.</span>
+                </label>
+            </li>
+            {% else %}
+            <li>
+                <label class="flex items-start gap-3 text-slate-700">
+                    <input type="checkbox" class="action-checkbox mt-1">
+                    <span>Look for additional information from a trusted or official source.</span>
+                </label>
+            </li>
+            {% endif %}
+
+            {% if classification.missing_context %}
+            {% for item in classification.missing_context %}
+            <li>
+                <label class="flex items-start gap-3 text-slate-700">
+                    <input type="checkbox" class="action-checkbox mt-1">
+                    <span>Verify: {{ item }}</span>
+                </label>
+            </li>
+            {% endfor %}
+            {% endif %}
+
+            <li>
+                <label class="flex items-start gap-3 text-slate-700">
+                    <input type="checkbox" class="action-checkbox mt-1">
+
+                    {% set category = classification.category | lower %}
+
+                    {% if category == "education" %}
+                    <span>
+                Review your school's official policies or contact
+                the appropriate student services department.
+            </span>
+
+                    {% elif category == "finance" %}
+                    <span>
+                Review official financial guidance and confirm
+                any conditions that apply to your situation.
+            </span>
+
+                    {% elif category == "health" %}
+                    <span>
+                Verify the information with an authoritative
+                health source or qualified healthcare professional.
+            </span>
+
+                    {% elif category == "technology" %}
+                    <span>
+                Check official technical documentation or
+                manufacturer information.
+            </span>
+
+                    {% else %}
+                    <span>
+                Confirm important information with a reliable
+                primary or official source before taking action.
+            </span>
+
+                    {% endif %}
+
+                </label>
+            </li>
+
+        </ul>
+
+        <p id="action-progress" class="text-sm text-slate-500 mt-4">
+            0 steps completed
+        </p>
+
+        <button
+                id="save-action-plan"
+                type="button"
+                class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+        >
+            Save Checklist
+        </button>
+
+        <p id="action-save-status" class="text-sm text-green-700 mt-2"></p>
+
+    </div>
 
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col sm:flex-row justify-between items-center">
 
@@ -268,6 +371,7 @@
          <div class="flex space-x-3">
 
             <button
+                    id="feedback-yes"
                 class="flex items-center px-4 py-2 border border-slate-300 rounded-lg text-slate-600 hover:bg-green-50 hover:text-green-600 hover:border-green-300 transition"
             >
                 <svg
@@ -289,6 +393,7 @@
             </button>
 
             <button
+                    id="feedback-no"
                 class="flex items-center px-4 py-2 border border-slate-300 rounded-lg text-slate-600 hover:bg-red-50 hover:text-red-600 hover:border-red-300 transition"
             >
                 <svg
@@ -312,6 +417,7 @@
         </div>
 
     </div>
+    <p id="feedback-status" class="text-sm text-green-700 text-center"></p>
 
     <div class="text-center pt-4">
 
