@@ -8,6 +8,17 @@
   <title>Labs | Faíct</title>
 
   <link rel="stylesheet" href="styles.css">
+
+  <style>
+    .file-pending {
+      color: #a8b0bd;
+    }
+
+    .file-note {
+      font-size: 0.9rem;
+      opacity: 0.85;
+    }
+  </style>
 </head>
 
 <body>
@@ -24,8 +35,14 @@
       <a href="labs.html">Labs</a>
       <a href="references.html">References</a>
       <a href="glossary.html">Glossary</a>
-      <a href="https://www.odu.edu/" target="_blank">ODU</a>
-      <a href="https://odu.edu/computer-science" target="_blank">
+      <a href="https://www.odu.edu/"
+         target="_blank"
+         rel="noopener noreferrer">
+        ODU
+      </a>
+      <a href="https://odu.edu/computer-science"
+         target="_blank"
+         rel="noopener noreferrer">
         CS Department
       </a>
     </div>
@@ -40,94 +57,95 @@
     <h2>CS 411W Labs</h2>
 
     <p>
-      This page contains the most recent lab submissions and project
-      documentation provided by members of Group Blue during the
-      development of Faíct. Additional team member documents will be
-      added as they are received.
+      This page contains the most recent lab submissions
+      and project documentation provided by members of
+      Group Blue during the development of Faíct.
+    </p>
+
+    <p>
+      Documents are organized by assignment and team member.
+      Available PDFs are displayed automatically when uploaded
+      using the designated filenames. Documents that have not
+      been uploaded are marked as pending.
     </p>
 
   </section>
 
+
+  <!-- LAB 1 -->
 
   <section class="card">
 
     <h2>Lab 1 - Project Outline</h2>
 
     <p>
-      The following documents contain the most recent Lab 1 submissions
-      currently provided by team members.
+      The following documents contain the most recent
+      Lab 1 Project Outline submissions for each team member.
     </p>
 
-    <ul class="clean-list">
-
-      <li>
-        <a
-          href="docs/shaavon_lab1.pdf"
-          target="_blank">
-          Shaavon Farrow - Lab 1 Version 1
-        </a>
-      </li>
-
-      <li>
-        <a
-          href="docs/colby_lab1.pdf"
-          target="_blank">
-          Colby Scroggins - Lab 1 Version 1
-        </a>
-      </li>
-
-      <li>
-        <a
-          href="docs/anthony_lab1.pdf"
-          target="_blank">
-          Anthony Oliphant Jr - Lab 1 Version 1
-        </a>
-      </li>
-
+    <ul class="clean-list" id="lab1-files">
+      <li>Checking uploaded documents...</li>
     </ul>
 
   </section>
 
+
+  <!-- LAB 2 SECTIONS 1 AND 2 -->
 
   <section class="card">
 
-    <h2>Lab 2 - Software Requirements Specification</h2>
+    <h2>Lab 2 - Software Requirements Specification: Sections 1 &amp; 2</h2>
 
     <p>
-      The following document contains the current Lab 2 Software
-      Requirements Specification submission.
+      The following documents contain the most recent
+      individual submissions for Sections 1 and 2 of
+      the Software Requirements Specification.
     </p>
 
-    <ul class="clean-list">
-
-      <li>
-        <a
-          href="docs/johnovon_lab2_srs.pdf"
-          target="_blank">
-          Johnovon Richards - Lab 2 SRS
-        </a>
-      </li>
-
+    <ul class="clean-list" id="lab2-part12-files">
+      <li>Checking uploaded documents...</li>
     </ul>
 
   </section>
 
+
+  <!-- LAB 2 SECTION 3 -->
+
+  <section class="card">
+
+    <h2>Lab 2 - Software Requirements Specification: Section 3</h2>
+
+    <p>
+      The following document contains the most recent
+      team submission for Section 3 of the
+      Software Requirements Specification.
+    </p>
+
+    <ul class="clean-list" id="lab2-section3-files">
+      <li>Checking uploaded document...</li>
+    </ul>
+
+  </section>
+
+
+  <!-- USER MANUAL -->
 
   <section class="card">
 
     <h2>User Manual - Lab 3 &amp; Lab 4</h2>
 
     <p>
-      The Faíct User Manual provides instructions for using the
-      prototype, submitting claims, understanding verification results,
-      reviewing supporting evidence, accessing saved verifications,
+      The Faíct User Manual provides instructions for
+      using the prototype, submitting claims, understanding
+      verification results, reviewing supporting evidence,
+      accessing saved verifications, using the Action Plan,
       and troubleshooting common issues.
     </p>
 
     <p>
-      The manual is maintained collaboratively by Group Blue through
-      our GitHub Wiki and will be updated as prototype functionality
-      is finalized.
+      The manual is maintained collaboratively by Group Blue
+      through our GitHub Wiki and is updated as prototype
+      functionality is finalized.
     </p>
 
     <ul class="clean-list">
@@ -145,18 +163,6 @@
 
   </section>
 
-
-  <section class="card">
-
-    <h2>Pending Lab 1 Submissions</h2>
-
-    <p>
-      Additional Lab 1 documents will be added when the remaining
-      team members provide their most recent versions.
-    </p>
-
-  </section>
-
 </main>
 
 
@@ -167,6 +173,232 @@
   </p>
 
 </footer>
+
+
+<script>
+
+  // =====================================================
+  // TEAM MEMBERS
+  // =====================================================
+
+  // Each member's slug determines the expected PDF name.
+
+  const members = [
+    {
+      name: "Shaavon Farrow",
+      slug: "shaavon"
+    },
+    {
+      name: "Johnovon Richards",
+      slug: "johnovon"
+    },
+    {
+      name: "Patrick Cunanan",
+      slug: "patrick"
+    },
+    {
+      name: "Colby Scroggins",
+      slug: "colby"
+    },
+    {
+      name: "Anthony Oliphant Jr",
+      slug: "anthony"
+    },
+    {
+      name: "Mohumed Shemson",
+      slug: "mohumed"
+    }
+  ];
+
+
+  // =====================================================
+  // CHECK WHETHER A PDF EXISTS
+  // =====================================================
+
+  async function pdfExists(path) {
+
+    try {
+
+      const response = await fetch(path, {
+        method: "HEAD",
+        cache: "no-store"
+      });
+
+      return response.ok;
+
+    } catch (error) {
+
+      return false;
+
+    }
+
+  }
+
+
+  // =====================================================
+  // CREATE A DOCUMENT ENTRY
+  // =====================================================
+
+  function appendEntry(list, label, path) {
+
+    const item = document.createElement("li");
+
+    if (path) {
+
+      const link = document.createElement("a");
+
+      link.href = path;
+      link.textContent = label;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+
+      item.appendChild(link);
+
+    } else {
+
+      const pending = document.createElement("span");
+
+      pending.className = "file-pending";
+      pending.textContent = label + " - Pending upload";
+
+      item.appendChild(pending);
+
+    }
+
+    list.appendChild(item);
+
+  }
+
+
+  // =====================================================
+  // LOAD INDIVIDUAL TEAM MEMBER DOCUMENTS
+  // =====================================================
+
+  async function renderMemberFiles(
+    listId,
+    filenameSuffix,
+    labLabel
+  ) {
+
+    const list = document.getElementById(listId);
+
+    const entries = await Promise.all(
+
+      members.map(async (member) => {
+
+        const standardPath =
+          "docs/" + member.slug + filenameSuffix;
+
+        // Check for the standard filename.
+
+        if (await pdfExists(standardPath)) {
+
+          return {
+            label: member.name + " - " + labLabel,
+            path: standardPath
+          };
+
+        }
+
+        // Preserve Johnovon's existing Lab 2 SRS link
+        // until the standardized Sections 1 & 2
+        // document is uploaded.
+
+        if (
+          member.slug === "johnovon" &&
+          filenameSuffix === "_lab2_sections_1_2.pdf"
+        ) {
+
+          const legacyPath =
+            "docs/johnovon_lab2_srs.pdf";
+
+          if (await pdfExists(legacyPath)) {
+
+            return {
+              label:
+                member.name +
+                " - Existing Lab 2 SRS (verify Sections 1 & 2)",
+              path: legacyPath
+            };
+
+          }
+
+        }
+
+        // Show pending when no matching PDF exists.
+
+        return {
+          label: member.name + " - " + labLabel,
+          path: null
+        };
+
+      })
+
+    );
+
+    list.replaceChildren();
+
+    entries.forEach((entry) => {
+
+      appendEntry(
+        list,
+        entry.label,
+        entry.path
+      );
+
+    });
+
+  }
+
+
+  // =====================================================
+  // LOAD TEAM LAB 2 SECTION 3
+  // =====================================================
+
+  async function renderTeamSection3() {
+
+    const list = document.getElementById(
+      "lab2-section3-files"
+    );
+
+    const path = "docs/lab2_section_3.pdf";
+
+    const exists = await pdfExists(path);
+
+    list.replaceChildren();
+
+    appendEntry(
+      list,
+      "Group Blue - Lab 2 Section 3",
+      exists ? path : null
+    );
+
+  }
+
+
+  // =====================================================
+  // INITIALIZE DOCUMENT LISTINGS
+  // =====================================================
+
+  Promise.all([
+
+    renderMemberFiles(
+      "lab1-files",
+      "_lab1.pdf",
+      "Lab 1 Project Outline"
+    ),
+
+    renderMemberFiles(
+      "lab2-part12-files",
+      "_lab2_sections_1_2.pdf",
+      "Lab 2 Sections 1 & 2"
+    ),
+
+    renderTeamSection3()
+
+  ]);
+
+</script>
 
 </body>
 </html>
